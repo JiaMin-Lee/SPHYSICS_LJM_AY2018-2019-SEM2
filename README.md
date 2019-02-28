@@ -16,3 +16,4 @@ The modifications made in SPHYSICSgen2D are as follows:
                       input from subroutine specgeom
 4.                    respond to use of EoS_Morris (but the use EoS_Morris still produce wrong results)
 5.                    modified subroutine gate so that it does not only creates vertical gate
+6.                    added in subroutine art_pressure to accomodate for EoS_Morris
