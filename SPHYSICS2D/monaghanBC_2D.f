@@ -118,8 +118,9 @@ c          --- Velocity Correction ---     !SPHysics Guide, Eq. 2.18
                 epsilon_dyn = 1.0
              endif
 
-             Appc = App*(epsilon_Z + epsilon_dyn) !Force correction     !SPHysics Guide, Eq. 2.16
-             
+!             Appc = App*(epsilon_Z + epsilon_dyn) !Force correction     !SPHysics Guide, Eq. 2.16
+             Appc = App                            !Force correction     !SPHysics Guide, Eq. 2.16
+            
              facp=0.5*(1.+cos(pi*abs(xpp)/deltappt))*
      1            (Appc*(1.0-q)/sqrt(q))       !SPHysics Guide, Eq. 2.12, 2.13, 2.15
 c     2            *vnorm_mass
