@@ -53,6 +53,15 @@ c
       !if(itime.eq.0) call densityFilter
       call ac		
 
+
+!      i = 246 	
+!      write(80,*)'After ac_2D.f, predictor, itime = ',itime
+!      write(80,*)'xp(i), zp(i) ',xp(i), zp(i)
+!      write(80,*)'ax(i), az(i) ',udot(i), wdot(i)
+!      write(80,*)'ar(i) ',rdot(i)
+!      write(80,*)'xcor(i), zcor(i) ',xcor(i), zcor(i)
+!      write(80,*)'dt, dt2 ',dt, dt2 
+
 c
 c  ... compute corrections to:
 c         (a) rate of change of velocity due to
@@ -64,16 +73,17 @@ c
 C
       call correct
 
-c      i = 1087	
-c      print*,'After CORRECT, predictor, itime = ',itime
-c      print*,'xp(i), zp(i) ',xp(i), zp(i)
-c      print*,'ax(i), az(i) ',ax(i), az(i)
-c      print*,'dt, dt2 ',dt, dt2 
+!      i = 246 	
+!      write(80,*)'After CORRECT_2D.f, predictor, itime = ',itime
+!      write(80,*)'xp(i), zp(i) ',xp(i), zp(i)
+!      write(80,*)'ax(i), az(i) ',udot(i), wdot(i)
+!      write(80,*)'up(i), wp(i) ',xdot(i), zdot(i)
+!      write(80,*)'dt, dt2 ',dt, dt2 
 c      i = 565	
 c      print*,'xp(i), zp(i) ',xp(i), zp(i)
 c      print*,'ax(i), az(i) ',ax(i), az(i)
 c      print*,'dt, dt2 ',dt, dt2 
-c      if(itime.eq.3)stop
+!      if(itime.eq.3)stop
 
       if (ivar_dt.eq.1) then
 	    call variable_time_step  
@@ -85,6 +95,7 @@ c  ... predictor
 c
 
        do i=nstart,np
+!       do i=nstart,np-nbuffer
          xo(i)   = xp(i)
          zo(i)   = zp(i)
          uo(i)   = up(i)
@@ -92,17 +103,35 @@ c
          po(i)   = p(i)
          rhoo(i) = rhop(i)
          TEo(i)=TEp(i)
-        
+
+!        if (i.eq.246) then	
+!         write(80,*)'Before EoS, predictor, itime = ',itime
+!         write(80,*)'xp(i), zp(i) ',xo(i), zo(i)
+!         write(80,*)'up(i), wp(i) ',uo(i), wo(i)
+!         write(80,*)'p(i) ',po(i)
+!         write(80,*)'rhop(i) ',rhoo(i)
+!         write(80,*)'dt, dt2 ',dt, dt2 
+!        end if
+  
       enddo
 
 
       do i=nbp1,np
+!      do i=nbp1,np-nbuffer
          rhop(i) = rhoo(i) + dt2*rdot(i)
          pVol(i) = pm(i)/rhop(i)
          TEp(i)=TEo(i)+dt2*TEdot(i)
          call equation_of_state(rhop(i),TEp(i),p(i),cs(i))
-      end do
 
+!        if (i.eq.246) then	
+!         write(80,*)'After EoS, PREDICTOR, itime = ',itime
+!         write(80,*)'p(i) ',p(i)
+!         write(80,*)'rhop(i) ',rhop(i)
+!         write(80,*)'cs(i) ',cs(i)
+!         write(80,*)'dt, dt2 ',dt, dt2 
+!        end if
+
+      end do
 
       if(iBC.eq.2)then	!Hughes & Grahams 2009 correction 
          nstep_DBC=nstep_DBC+1
@@ -122,6 +151,7 @@ c
 
       
       do i=nbp1,np
+!      do i=nbp1,np-nbuffer
          xp(i) = xo(i) + dt2*xdot(i)
          zp(i) = zo(i) + dt2*zdot(i)
         
@@ -130,6 +160,10 @@ c
       
       enddo
       
+!      i = 246 	
+!      write(80,*)'PREDICTOR, itime = ',itime
+!      write(80,*)'xp(i), zp(i) ',xp(i), zp(i)
+!      write(80,*)'up(i), wp(i) ',up(i), wp(i)
       
       call movingObjects(0)
       
@@ -159,6 +193,7 @@ c
 c
         print*,'sum_wab(i) ',sum_wab(i)
        !stop
+      
       end if
       !---------------------
 
@@ -175,7 +210,22 @@ c
        endif
 
       call ac
+
+!      i = 246 	
+!      write(80,*)'After ac_2D.f, corrector, itime = ',itime
+!      write(80,*)'xp(i), zp(i) ',xp(i), zp(i)
+!      write(80,*)'ax(i), az(i) ',udot(i), wdot(i)
+!      write(80,*)'ar(i) ',rdot(i)
+!      write(80,*)'xcor(i), zcor(i) ',xcor(i), zcor(i)
+!      write(80,*)'dt, dt2 ',dt, dt2 
+
       call correct
+
+!      i = 246 	
+!      write(80,*)'After CORRECT_2D.f, corrector, itime = ',itime
+!      write(80,*)'xp(i), zp(i) ',xp(i), zp(i)
+!      write(80,*)'ax(i), az(i) ',udot(i), wdot(i)
+!      write(80,*)'up(i), wp(i) ',xdot(i), zdot(i)
 
 
       if (ivar_dt.eq.1) then
@@ -185,9 +235,16 @@ c
       endif
 
       do i=nbp1,np
+!      do i=nbp1,np-nbuffer
          rhop(i) = rhoo(i) + dt2*rdot(i)
          TEp(i)=TEo(i)+dt2*TEdot(i)
-      end do
+
+!        if (i.eq.246) then
+!         write(80,*)'CORRECTOR, itime = ',itime
+!         write(80,*)'rhop(i) ',rhop(i)
+!        end if
+        
+      enddo
 
 
       if(iDBC.eq.1)then	!Hughes & Grahams 2009 correction 
@@ -199,6 +256,7 @@ c
       endif 
 
       do i=nbp1,np
+!      do i=nbp1,np-nbuffer
          xp(i) = xo(i) + dt2*xdot(i)
          zp(i) = zo(i) + dt2*zdot(i)
          
@@ -207,13 +265,27 @@ c
 
       enddo
 
-      
+!      i = 246 	
+!      write(80,*)'CORRECTOR, itime = ',itime
+!      write(80,*)'xp(i), zp(i) ',xp(i), zp(i)
+!      write(80,*)'up(i), wp(i) ',up(i), wp(i)
+            
       !-- Perform final integration correction --
       do i=nbp1,np
+!      do i=nbp1,np-nbuffer
          rhop(i) = 2.*rhop(i) - rhoo(i)
          pVol(i) = pm(i)/rhop(i)
          TEp(i)=2.*TEp(i)-TEo(i)
          call equation_of_state(rhop(i),TEp(i),p(i),cs(i)) 
+
+!        if (i.eq.246) then 	
+!         write(80,*)'After EoS, FINAL, itime = ',itime
+!         write(80,*)'p(i) ',p(i)
+!         write(80,*)'rhop(i) ',rhop(i)
+!         write(80,*)'cs(i) ',cs(i)
+!         write(80,*)'dt, dt2 ',dt, dt2 
+!        end if
+
       end do
 
 
@@ -229,6 +301,7 @@ c
 
      
       do i=nbp1,np
+!      do i=nbp1,np-nbuffer
          xp(i)   = 2.*xp(i) - xo(i)
          zp(i)   = 2.*zp(i) - zo(i)
 
@@ -236,8 +309,14 @@ c
          wp(i)   = 2.*wp(i) - wo(i)
          
       enddo
+      
+!      i = 246 	
+!      write(80,*)'FINAL, itime = ',itime
+!      write(80,*)'xp(i), zp(i) ',xp(i), zp(i)
+!      write(80,*)'up(i), wp(i) ',up(i), wp(i)
+            
 
-       
+
       call movingObjects(1)
 
       !--- Diagnostic Print out ---
@@ -267,6 +346,7 @@ c
           !print*,'sum_dWdy(i)',sum_dWdy(i)
           !print*,'rhop_sum(i)',rhop_sum(i)
           print*,'ddt_p, ddt_c, dt',ddt_p, ddt_c, dt
+                 
           if(itime.ge.itime_check+0)stop
       end if
 

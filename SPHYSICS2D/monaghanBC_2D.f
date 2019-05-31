@@ -118,8 +118,9 @@ c          --- Velocity Correction ---     !SPHysics Guide, Eq. 2.18
                 epsilon_dyn = 1.0
              endif
 
-             Appc = App*(epsilon_Z + epsilon_dyn) !Force correction     !SPHysics Guide, Eq. 2.16
-             
+!             Appc = App*(epsilon_Z + epsilon_dyn) !Force correction     !SPHysics Guide, Eq. 2.16
+             Appc = App                            !Force correction     !SPHysics Guide, Eq. 2.16
+            
              facp=0.5*(1.+cos(pi*abs(xpp)/deltappt))*
      1            (Appc*(1.0-q)/sqrt(q))       !SPHysics Guide, Eq. 2.12, 2.13, 2.15
 c     2            *vnorm_mass
@@ -131,7 +132,41 @@ c     2            *vnorm_mass
              fxbp = 0.0
              fzbp = 0.0
          end if
-
         
+             i_open = 0
+             
+!       if (iip.eq.246) then
+!            i_open = i_open + 1
+!          write(80,*) '    '
+!          write(80,*) 'Boundary repulsion force contribution'
+!          write(80,*) '  '
+!          write(80,*) 'particle number, i = ', iip
+!          write(80,*) 'particle number, j = ', jjp
+!          write(80,*) 'A = ' , App
+!          write(80,*) 'q = ', q
+!          write(80,*) 'R = ', App*(1.0-q)/sqrt(q)
+!          write(80,*) 'P = ',(0.5*(1.+cos(pi*abs(xpp)/deltappt)))
+!          write(80,*) 'normal vector to boundary in x-dir = ', xnb(jjp)         
+!          write(80,*) 'normal vector to boundary in z-dir = ', znb(jjp)
+!          write(80,*) 'Repulsion force per unit mass in x-dir = ', fxbp
+!          write(80,*) 'Repulsion force per unit mass in z-dir = ', fzbp
+!          write(80,*) '    '
+
+        !   tfx(iip) = tfx(iip) + fxbp
+        !   tfz(iip) = tfz(iip) + fzbp
+
+!          if (i_open.eq.1) then
+!           open(71,file='RepulsionForce')
+!           write(71,1001) iip, jjp, cs(iip), App, q, R, P, fxbp,fzbp
+!           close(71)
+!          else
+!          open(71,file='RepulsionForce',status='old',POSITION='append')
+!          write(71,1001) iip, jjp, cs(iip), App, q, R, P, fxbp,fzbp
+!          close(71)
+!         end if 
+!                
+!1001   format(2(1x, I6), 7e16.8)
+                               
+!        end if 
 
       end	

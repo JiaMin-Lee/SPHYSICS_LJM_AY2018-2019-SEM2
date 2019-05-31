@@ -78,12 +78,16 @@ c      Fa_sqrt=((ax(i_fa)+grx)**2+
 c     +         (az(i_fa)+grz)**2)**0.25
 c      dt_1=sqrt(h)/Fa_sqrt
       if(i_fa.gt.0)then
-        Fa_sqrt=((ax(i_fa)+grx)**2
-     &          +(az(i_fa)+grz)**2)**0.25
+!        Fa_sqrt=((ax(i_fa)+grx)**2
+!     &          +((az(i_fa)+grz)**2))**0.25
 
+        Fa_sqrt=((ax(i_fa)+grx)**2
+     &          +((az(i_fa))**2))**0.25
         dt_1=sqrt(h)/Fa_sqrt
+
       else
-        Fa_sqrt=((grx)**2+(grz)**2)**0.25
+      !  grz = 0
+       Fa_sqrt=((grx)**2+(grz)**2)**0.25
         dt_1=sqrt(h)/Fa_sqrt
       endif
 

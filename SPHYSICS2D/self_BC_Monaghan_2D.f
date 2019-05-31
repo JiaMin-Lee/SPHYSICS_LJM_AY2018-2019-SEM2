@@ -83,6 +83,14 @@ c  	      for tensile correction (Monaghan , JCP.  159 (2000) 290- 311)
 c            Only to be activated with cubic spline kernel 
 c
 
+!             if (i.eq.246) then
+!                 write(80,*) 'From same cell,j1 = ', j1
+!                 open(72,file'SameCell')
+!                write(72,*) 'Cell number = ', j1
+!                close(72)
+             
+!             end if
+
              if(index_tensile.eq.1) then   
 
 
@@ -108,6 +116,8 @@ c              _____ Tensile correction
 
             endif
 
+!        if (i.lt.(np-nbuffer)) then
+
             if(i.gt.nb.and.j.gt.nb) then   !both fluid particles
 
               ax(i) = ax(i) - pm(j) * p_v * frxi
@@ -115,6 +125,23 @@ c              _____ Tensile correction
 
               ax(j) = ax(j) + pm(i) * p_v * frxj
               az(j) = az(j) + pm(i) * p_v * frzj
+
+!            if (i.eq.246) then
+                
+!               axx = -pm(j)*p_v*frxi
+!               azz = -pm(j)*p_v*frzi
+                
+!              write(80,*) '  '
+!              write(80,*) 'Include pressure gradient contribution'
+!              write(80,*) 'particle number, i = ', i
+!              write(80,*) 'particle number, j = ', j
+!              write(80,*) 'DeltaP in x dir = -', pm(j)*p_v*frxi
+!              write(80,*) 'DeltaP in z dir = -', pm(j)*p_v*frzi
+!              write(80,*) 'ax(i)  = ', ax(i)
+!              write(80,*) 'az(i)  = ', az(i)
+!              write(80,*) '  '
+
+!             end if 
 
               call gradients_calc(i,j,dux,duz)               
 
@@ -128,6 +155,19 @@ c
               dot2j = dux*frxj + duz*frzj
               ar(i) = ar(i) + pm(j)*dot2i
               ar(j) = ar(j) + pm(i)*dot2j
+
+!           if (i.eq.246) then
+! 
+!              write(80,*) '  '
+!              write(80,*) 'Change in fluid density, i ', i 
+!              write(80,*) 'particle number, j = ', j
+!              write(80,*) 'Continuity density = ', pm(j)*dot2i
+!              write(80,*) 'ar(i)  = ', ar(i)
+!              write(80,*) '  '
+!
+!            end if 
+ 
+        
 
 c   ...         Thermal Energy
 c             (Monaghan, JCP 110 (1994) 399- 406)
@@ -151,6 +191,33 @@ c
               ux(j) = ux(j) + dux*pmi_Wab_over_rhobar   !pm(i) * dux * Wab / robar
               wx(j) = wx(j) + duz*pmi_Wab_over_rhobar   !pm(i) * duz * Wab / robar
 
+
+!           if (i.eq.246) then
+!               
+!               xsphx = -dux*pmj_Wab_over_rhobar
+!               xsphz = -duz*pmj_Wab_over_rhobar
+!
+!              write(80,*) '  '
+!              write(80,*) 'Summation of XSPH variant particle i = ',i
+!              write(80,*) 'particle number, j = ', j
+!              write(80,*) 'XSPH in x dir = -',dux*pmj_Wab_over_rhobar
+!              write(80,*) 'XSPH in z dir = -',duz*pmj_Wab_over_rhobar
+!              write(80,*) 'ux(i)  = ', ux(i)            !have not multiply by epsilon = 0.5
+!              write(80,*) 'wx(i)  = ', wx(i)            !have not multiply by epsilon = 0.5
+!              write(80,*) '  '
+
+
+!           open(72,file='RepulsionForce',status='old',POSITION='append')
+!           write(72,1002) i, j, axx, azz, ax(i), az(i),
+!     &                    pm(j)*dot2i, ar(i), xsphx, xsphz, ux(i), wx(i)
+
+!           close(72)
+
+
+!1002   format(2(1x, I6), 10e16.8)
+
+!             end if 
+
 c         Vorticity calculation
 
              if(ipoute.eq.1.and.i_vort.eq.1.and.i.gt.nb.and.j.gt.nb)then
@@ -167,6 +234,20 @@ c         Vorticity calculation
              ax(i) = ax(i) + temp*dux
              az(i) = az(i) + temp*duz
 
+!          if (i.eq.246) then
+! 
+!             write(80,*) ' '
+!             write(80,*) 'Include repulsive force contribution'        
+!             write(80,*) 'particle number, i = ', i
+!             write(80,*) 'particle number, j = ', j
+!             write(80,*) 'Repulsion force in x-dir = ',fxbMON
+!             write(80,*) 'Repulsion force in z-dir = ',fzbMON
+!             write(80,*) 'ax(i)  = ', ax(i)
+!             write(80,*) 'az(i)  = ', az(i)
+!             write(80,*) '  '
+!
+!          end if 
+
            else if(j.gt.nb.and.i.le.nb)then                  !i is boundary particle
               call MonaghanBC(j,i,-drx,-drz,dot,-dux,-duz,
      &                          fxbMON,fzbMON)   
@@ -176,8 +257,24 @@ c         Vorticity calculation
      &           ((drx*frxj+drz*frzj)/(rr2 + eta2))
               ax(j) = ax(j) - temp*dux
               az(j) = az(j) - temp*duz
-            
+           
+
+!           if (i.eq.246) then
+!
+!              write(80,*) ' '
+!              write(80,*) 'Include repulsive force contribution'
+!              write(80,*) 'particle number, i = ', i
+!              write(80,*) 'particle number, j = ', j
+!              write(80,*) 'Repulsion force in x-dir = ',fxbMON
+!              write(80,*) 'Repulsion force in z-dir = ',fzbMON
+!              write(80,*) 'ax(i)  = ', ax(i)
+!              write(80,*) 'az(i)  = ', az(i)
+!              write(80,*) '  '
+! 
+!           end if
+ 
             endif ! Interaction fluid-fluid or fluid-boundary
+!            end if   ! if i is not buffer particle
 	   endif ! if q<2
         enddo ! Box jj
       enddo   ! Box ii

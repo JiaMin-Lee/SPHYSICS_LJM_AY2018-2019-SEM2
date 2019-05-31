@@ -68,6 +68,13 @@ c
              p_v = pr(i) + pr(j)
 
 
+!             if (i.eq.246) then
+
+!              write(80,*) 'Particle in cell, j1 = ', j1
+!              write(80,*) 'Interpolation from neighbour cell, j2 = ',j2
+
+!            end if
+
              if (index_tensile.eq.1) then
 
 c   ____ Tensile correction 
@@ -102,6 +109,21 @@ c   ____ Tensile correction
                ax(j) = ax(j) + pm(i) * p_v * frxj
                az(j) = az(j) + pm(i) * p_v * frzj
 
+!             if (i.eq.246) then
+
+!                write(80,*) '  '
+!                write(80,*) 'Include pressure gradient contribution'
+!                write(80,*) 'particle number, i = ', i
+!                write(80,*) 'particle number, j = ', j
+!                write(80,*) 'DeltaP in x dir = -', pm(j)*p_v*frxi
+!                write(80,*) 'DeltaP in z dir = -', pm(j)*p_v*frzi
+!                write(80,*) 'ax(i)  = ', ax(i)
+!                write(80,*) 'az(i)  = ', az(i)
+!                write(80,*) '  '
+
+!             end if
+               
+
                call gradients_calc(i,j,dux,duz)               
 
                call viscosity(dot,drx,drz,dux,duz,rr2,
@@ -112,11 +134,24 @@ c              ...  density acceleration
 c              using the derivative of the kernel, not the kernel itself
 
                dot2 = dux*frxi + duz*frzi
+               dot2ii = dot2
                ar(i) = ar(i) + pm(j)*dot2
                dot2 = dux*frxj + duz*frzj
                ar(j) = ar(j) + pm(i)*dot2
 
-c   ...         Thermal Energy
+!           if (i.eq.246) then
+
+!              write(80,*) '  '
+!              write(80,*) 'Change in fluid density, i ', i
+!              write(80,*) 'particle number, j = ', j
+!              write(80,*) 'Continuity density = ', pm(j)*dot2ii
+!              write(80,*) 'ar(i)  = ', ar(i)
+!              write(80,*) '  '
+!
+!            end if
+
+ 
+c!   ...         Thermal Energy
 
                term1i=0.5 * p_v *( frxi*dux+frzi*duz)
                term1j=0.5 * p_v *( frxj*dux+frzj*duz)
@@ -136,7 +171,19 @@ c
                ux(j) = ux(j) + dux*pmi_Wab_over_rhobar   !pm(i) * dux * Wab / robar
                wx(j) = wx(j) + duz*pmi_Wab_over_rhobar   !pm(i) * duz * Wab / robar
 
-c             ...  Vorticity calculation
+!              if (i.eq.246) then
+
+!                write(80,*) '  '
+!                write(80,*) 'Summation of XSPH variant particle i = ',i
+!                write(80,*) 'particle number, j = ', j
+!                write(80,*) 'XSPH in x dir = -',dux*pmj_Wab_over_rhobar
+!                write(80,*) 'XSPH in z dir = -',duz*pmj_Wab_over_rhobar
+!                write(80,*) 'ux(i)  = ', ux(i)
+!                write(80,*) 'wx(i)  = ', wx(i)
+!                write(80,*) '  '
+!                
+!            end if
+c ...  Vorticity calculation
 
              if(ipoute.eq.1.and.i_vort.eq.1.and.i.gt.nb.and.j.gt.nb)then
                   call vorticity_calc(i,j,dux,duz)
@@ -151,6 +198,20 @@ c             ...  Vorticity calculation
      &           ((drx*frxi+drz*frzi)/(rr2 + eta2))
                ax(i) = ax(i) + temp*dux
                az(i) = az(i) + temp*duz
+
+!            if (i.eq.246) then
+
+!               write(80,*) ' '
+!               write(80,*) 'Include repulsive force contribution'
+!               write(80,*) 'particle number, i = ', i
+!               write(80,*) 'particle number, j = ', j
+!               write(80,*) 'Repulsion force in x-dir = ',fxbMON
+!               write(80,*) 'Repulsion force in z-dir = ',fzbMON
+!               write(80,*) 'ax(i)  = ', ax(i)
+!               write(80,*) 'az(i)  = ', az(i)
+!               write(80,*) '  '
+!
+!             end if
            
              else if(j.gt.nb.and.i.le.nb)then			!i is boundary particle
                call MonaghanBC(j,i,-drx,-drz,dot,-dux,-duz,
@@ -161,6 +222,21 @@ c             ...  Vorticity calculation
      &         ((drx*frxj+drz*frzj)/(rr2 + eta2))
                ax(j) = ax(j) - temp*dux
                az(j) = az(j) - temp*duz
+
+
+!            if (i.eq.246) then
+
+!               write(80,*) ' '
+!               write(80,*) 'Include repulsive force contribution'
+!               write(80,*) 'particle number, i = ', i
+!               write(80,*) 'particle number, j = ', j
+!               write(80,*) 'Repulsion force in x-dir = ',fxbMON
+!               write(80,*) 'Repulsion force in z-dir = ',fzbMON
+!               write(80,*) 'ax(i)  = ', ax(i)
+!               write(80,*) 'az(i)  = ', az(i)
+!               write(80,*) '  '
+!
+!            end if
             
              endif  ! Interaction fluid-fluid or fluid-boundary
   
