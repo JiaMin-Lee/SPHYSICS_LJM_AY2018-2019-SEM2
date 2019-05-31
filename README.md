@@ -1,7 +1,7 @@
 # SPHYSICS_LJM_AY2018-2019-SEM2
 From SPHYSICS
 
-2/21/2019
+21/2/2019
 These codes are taken from SPHYSICS and some modifications are made to these existing codes. This is an attempt at changing the
 codes so that it does not reflect effects of gravity.
 
@@ -17,3 +17,7 @@ The modifications made in SPHYSICSgen2D are as follows:
 4.                    respond to use of EoS_Morris (but the use EoS_Morris still produce wrong results)
 5.                    modified subroutine gate so that it does not only creates vertical gate
 6.                    added in subroutine art_pressure to accomodate for EoS_Morris
+
+31/5/2019
+The modifications made in SPHYSICS2D are as follows:
+1. check_limits_2D.f : added in code to write a data file 'OutOfLimit' to record down the particles outside of limit
