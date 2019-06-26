@@ -21,3 +21,16 @@ The modifications made in SPHYSICSgen2D are as follows:
 31/5/2019
 The modifications made in SPHYSICS2D are as follows:
 1. check_limits_2D.f : added in code to write a data file 'OutOfLimit' to record down the particles outside of limit
+
+26/5/2019 (!!!based on branch self_monaghan celij monaghan and SPHYSICSgen2D)
+The modfications made in SPHYSICSgen2D are as follows:
+1. SPHYSICSgen_2D.f : changed the code such that Cs (speed of sound) is not dependent on gravity but based on user's input
+                    : pressure is not dependent on gravity
+                    : initial density is also not dependent on grvaity but based on the reference density
+                    : gravity either 0 or 9.81 (hard coded in) --> to be changed to made it into an option
+
+The modifications made in SPHYSICS2D are as follows:
+1. SPHYSICS.2D.f    : gravity either 0 or 9.81 (hard coded in) --> to be changed to made to read from SPHYSICgen_2D.f (INDAT 
+                      created)
+2. self and celij_Monaghan : boundary particles included in the particle approximation of the fluid particles
+                             boundary particles do not changed in physical properties
