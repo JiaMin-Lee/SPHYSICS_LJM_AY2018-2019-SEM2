@@ -103,8 +103,8 @@ c     Kernel & Gradient corrections
 
 c     Constants
 c
+!      g=0.0
       g=9.81
-!      g=1e-4     
       pi=4.0*atan(1.0)
 
 
@@ -174,9 +174,18 @@ c     Define pressure terms
         write(*,*) rho0
         
         !rho0=1000.0 !initial density
-        gamma=7.0
+        write(*,*) 'Enter value of gamma to be used'
+        read(*,*) gamma
+        write(*,*) gamma
+!       gamma=7.0
         expont=1./gamma
         TE0=0.0
+
+        write(*,*) ' Enter speed of sound'
+        read(*,*) Co
+        write(*,*) Co
+ 
+        Co2=Co*Co
 
       else if (i_EoS.eq.3) then
 
@@ -194,14 +203,17 @@ c     Define pressure terms
 
        end if 
 
-        B=coef2*rho0*g*(h_SWL)/7.0  ! B is estimated using h_SWL and coef
+        B=rho0*Co2/gamma
+!        B=coef2*rho0*g*(h_SWL)/gamma  ! B is estimated using h_SWL and coef
 
-       if (i_EoS.eq.1) then
-        Co=((B*7.0)/rho0)**.5
-       end if 
+!       if (i_EoS.eq.1) then
+!        Co=((B*gamma)/rho0)**.5
+!       end if 
 
-        write(*,*) ' B=coef2*rho0*g*(h_SWL)/7.0 =',B
-        write(*,*) ' Co=',coef,'*V=',Co
+        write(*,*) 'Reference pressure = ',B
+!        write(*,*) ' B=coef2*rho0*g*(h_SWL)/gamma =',B
+        write(*,*) ' Speed of sound = ', Co
+!        write(*,*) ' Co=',coef,'*V=',Co
 
 !      else if (i_EoS.eq.3) then
 
@@ -479,6 +491,7 @@ c	___________ File INDAT
       write(11,*)ndt_VerletPerform
       write(11,*)ndt_FilterPerform
 	write(11,*)ndt_DBCPerform
+        write(11,*)nbuffer
 	close(11)
 	  
       xb_min = 0.0
@@ -767,6 +780,8 @@ c
 	call fluid_particles(nn,N,M,L,dx,dy,dz,expont,g,i_correct_pb,
      +            XXmin,XXmax,YYmin,YYmax,ZZmin,ZZmax,beta,theta)
 
+        nbuffer=0
+
 	np=nn
 	write(*,*) 'No of Particles',np
 
@@ -864,7 +879,7 @@ c
 
        if(i_periodicOBs(3).ne.1)then  !Lateral Boundaries
          call boundaries_bottom(nn,0,N,M,0,L,dx,dy,dz,beta,theta)    !z =z1
-!         call boundaries_top(nn,0,N,M,0,L,dx,dy,dz,theta,v_lid)     !z=z2
+         call boundaries_top(nn,0,N,M,0,L,dx,dy,dz,theta,v_lid)     !z=z2
        endif
 
 
@@ -934,7 +949,7 @@ c
         write(*,*) 'No of B. Fixed Particles',nbf
 
 
-        call boundaries_top(nn,0,N,M,0,L,dx,dy,dz,theta,v_lid)
+!        call boundaries_top(nn,0,N,M,0,L,dx,dy,dz,theta,v_lid)
 
         open(66,file='wavemaker')
 
@@ -1010,6 +1025,9 @@ c
 
         call fluid_particles(nn,N,M,L,dx,dy,dz,expont,g,i_correct_pb,
      +            XXmin,XXmax,YYmin,YYmax,ZZmin,ZZmax,beta,theta)
+       
+        nbuffer=0
+
         np=nn
         write(*,*) 'No of Particles',np
 
@@ -1305,6 +1323,8 @@ c	profile of the wave
      +                ,ZZmin,ZZmax,g,dx,dy,dz,expont)
       endif
 
+      nbuffer=0
+
       np=nn
       write(*,*) 'No of Particles',np
 
@@ -1388,15 +1408,16 @@ c     _________ Generate a SPECIFIC GEOMETRY
          print*,'X-Direction: ',i_periodicOBs(1)
          print*,'Y-Direction: ',i_periodicOBs(2)
          print*,'Z-Direction: ',i_periodicOBs(3)
-         if(i_periodicOBs(1).eq.1.or.i_periodicOBs(3).eq.1)then
-           print*
-           print*,'Periodic Boundaries in X & Z-Directions'
-           print*,'Not yet activated in code'
-           print*
-           stop
-         else if((i_periodicOBs(1).ne.0.and.i_periodicOBs(1).ne.1).or.
-     &           (i_periodicOBs(2).ne.0.and.i_periodicOBs(2).ne.1).or.
-     &           (i_periodicOBs(3).ne.0.and.i_periodicOBs(3).ne.1))then    
+!         if(i_periodicOBs(1).eq.1.or.i_periodicOBs(3).eq.1)then
+!           print*
+!           print*,'Periodic Boundaries in X & Z-Directions'
+!           print*,'Not yet activated in code'
+!           print*
+!           stop
+!         else if((i_periodicOBs(1).ne.0.and.i_periodicOBs(1).ne.1).or.
+          if((i_periodicOBs(1).ne.0.and.i_periodicOBs(1).ne.1).or.
+     &       (i_periodicOBs(2).ne.0.and.i_periodicOBs(2).ne.1).or.
+     &       (i_periodicOBs(3).ne.0.and.i_periodicOBs(3).ne.1))then    
            print*
            print*,'Not a valid Periodic Boundaries Option'
            print*
@@ -1456,10 +1477,6 @@ c     _________ Generate a SPECIFIC GEOMETRY
             write(*,*) 'beta_deg ',beta_deg
             beta = beta_deg*pi/180.0
            
-!            i_periodicOBs(1)=0
-!            i_periodicOBs(2)=0
-!            i_periodicOBs(3)=0
-       
 !   	nn=0	! Initial number of particles
 
 
@@ -1481,14 +1498,16 @@ c     _________ Generate a SPECIFIC GEOMETRY
             call boundaries_right (nn,N1,N2,M,L1,L2,dx,dy,dz,beta,0.)    !x = x2
           endif
 
-          if(iboundary.eq.3.and.i_periodicOBs(3).ne.1)then  !Lateral Boundaries
+!          if(iboundary.eq.3.and.i_periodicOBs(3).ne.1)then  !Lateral Boundaries
+          if(iboundary.eq.3)then  !Lateral Boundaries
             call boundaries_bottom(nn,N1,N2,M,L1,L2,dx,dy,dz,0.,0.)    !flat bottom plane   
 !            if(beta.gt.0.)then
 !             call boundaries_bottom(nn,N1,N2,M,L1,L2,dx,dy,dz,beta,0.)    !inclined beach plane
 !            endif
           endif
 
-          if(iboundary.eq.4.and.i_periodicOBs(3).ne.1)then  
+!          if(iboundary.eq.4.and.i_periodicOBs(3).ne.1)then  
+          if(iboundary.eq.4)then  
             call boundaries_top(nn,N1,N2,M,L1,L2,dx,dy,dz,0.,0.) 
           endif
 
@@ -1601,9 +1620,29 @@ c     _________ Generate a SPECIFIC GEOMETRY
        enddo
        !write(88,*)num_FB
        close(88)
-       
-       nb=nn
-       write(*,*) 'No of B. Particles',nb
+      
+        nb11=nn
+                                                           
+      write(*,*) ' Add water for buffer zone ?? (1=y)'
+      read(*,*)    i_buffer
+      write(*,*)   i_buffer
+                                                           
+      if(i_buffer.eq.1) then       
+        call fill_part(nn,XXmin,XXmax,YYmin,YYmax,ZZmin,ZZmax,
+     +               g,dx,dy,dz,expont,beta,0.)
+                                                           
+      end if 
+                                                          
+      if (i_buffer.eq.1) then  
+         nbuffer=nn-nb11
+      else
+         nbuffer=0
+      end if
+                                                           
+      write(*,*) 'No of Buffer Particles',nbuffer
+ 
+      nb=nn
+      write(*,*) 'No of B. Particles',nb
 
       i_correct_pb=1
 
@@ -1631,6 +1670,24 @@ c	______ water in the flat region
      +               g,dx,dy,dz,expont,beta,0.)
       endif
 
+!      np11=nn
+
+!      write(*,*) ' Add water for buffer zone ?? (1=y)'
+!      read(*,*)    i_buffer
+!      write(*,*)   i_buffer
+
+!      if(i_buffer.eq.1) then       
+!         call fill_part(nn,XXmin,XXmax,YYmin,YYmax,ZZmin,ZZmax,
+!     +               g,dx,dy,dz,expont,beta,0.)
+!      end if 
+
+!      if (i_buffer.eq.1) then  
+!         nbuffer=nn-np11
+!      else
+!         nbuffer=0
+!      end if
+    
+!      write(*,*) 'No of Buffer Particles',nbuffer
 
 c	profile of the wave
 
@@ -2156,10 +2213,10 @@ c     _________________ SUBROUTINE BOUNDARIES TOP
 !            call pos_veloc(nn,i*dx,j*dy,k*dz,v_lid,0.,0.)
 
               if(i.eq.N_start)then
-                i_minus1 = nn + 1
-                i_plus1  = nn
+                i_minus1 = nn + 1 
+                i_plus1  = nn 
               else if(i.eq.N_finish)then
-                i_minus1 = nn
+                i_minus1 = nn 
                 i_plus1  = nn - 1
               else
                 i_minus1 = nn + 1
@@ -2255,9 +2312,10 @@ c	____________________ SUBROUTINE PRESSURE
       include 'common.gen2D'
 
 
-!      rhop(nn)=rho0
-      rhop(nn)=rho0*(1.0+rho0*g*(ZZmax-zp(nn))/B)**expont
+      rhop(nn)=rho0
+!      rhop(nn)=rho0*(1.0+rho0*g*(ZZmax-zp(nn))/B)**expont
       p(nn)=B*((rhop(nn)/rho0)**gamma-1.0)
+!      p(nn)=B
 	
 	pm(nn)=vnorm_mass*rhop(nn)*dx*dz
 
@@ -2291,7 +2349,8 @@ c	____________________ SUBROUTINE CORRECT_P_BOUNDARIES
 	   if (xp(nn).le.XXmax. and. xp(nn).ge.XXmin.and.
      +	       Zp(nn).le.ZZmax. and. zp(nn).ge.ZZmin) then
 
-               rhop(nn)=rho0*(1.0+rho0*g*(ZZmax-zp(nn))/B)**expont
+                rhop(nn)=rho0
+!               rhop(nn)=rho0*(1.0+rho0*g*(ZZmax-zp(nn))/B)**expont
 	   else
 		     rhop(nn)=rho0
 	   endif
@@ -2451,7 +2510,8 @@ c	____________________ SUBROUTINE FILL_PART
        
        if(iBC.eq.1)then    !Repulsive force Boundary Condition             
          L_ini = L_ini-1
-         ZZmin = (L_ini+0.5)*dz
+!         ZZmin = (L_ini+0.5)*dz
+         ZZmin = (L_ini+1)*dz
        end if
                   
        write(*,*) 'Recalculated max and min X ',XXmax,XXmin
@@ -3480,12 +3540,14 @@ c	____________________ SUBROUTINE GATE
              do k=L_ini,L_end
 	           nn=nn+1
 	        call pos_veloc(nn,Xwall,j*dy,k*dz,0.,0.,0.)
-
-	        if((j+0.5)*dy.le.YYmax.and.(k+0.5)*dz.le.ZZmax) then
+                
+                if (iBC.eq.2) then
+	        if ((j+0.5)*dy.le.YYmax.and.(k+0.5)*dz.le.ZZmax) then
   	         nn=nn+1
 	         call pos_veloc(nn,Xwall+0.5*dx,(j+0.5)*dy,
      +                                (k+0.5)*dz,0.,0.,0.)
 	        endif
+                end if
 
                 if (iBC.eq.1) then  
              !2-D Normals
@@ -3514,30 +3576,32 @@ c	____________________ SUBROUTINE GATE
 	           nn=nn+1
 	        call pos_veloc(nn,i*dx,j*dy,ZZmax,0.,0.,0.)
 
+                if (iBC.eq.2) then               
 	        if((j+0.5)*dy.le.YYmax.and.(k+0.5)*dz.le.ZZmax) then
   	         nn=nn+1
 	         call pos_veloc(nn,(i+0.5)*dx,(j+0.5)*dy,
      +                                ZZmax+0.5*dz,0.,0.,0.)
 	        endif
+                end if
 
-                if (iBC.eq.1) then  
-                   if(i.eq.N_ini)then
-                     i_minus1 = nn + 1
-                     i_plus1  = nn
-                   else if(i.eq.N_end)then
-                     i_minus1 = nn
-                     i_plus1  = nn - 1
-                   else
-                     i_minus1 = nn + 1
-                     i_plus1  = nn - 1
-                   end if
-                   !-- Normal information - neighbour data for        --
-                   !-- Repulsive Boundary Particles (BPs)             --
-                   iBP_Pointer_Info(nn,3) = i_minus1       !i-1 neighbour
-                   iBP_Pointer_Info(nn,4) = i_plus1        !i+1 neighbour
-                end if 
-              end do
-            end do
+               if (iBC.eq.1) then  
+                  if(i.eq.N_ini)then
+                    i_minus1 = nn + 1
+                    i_plus1  = nn
+                  else if(i.eq.N_end)then
+                    i_minus1 = nn
+                    i_plus1  = nn - 1
+                  else
+                    i_minus1 = nn + 1
+                    i_plus1  = nn - 1
+                  end if
+                  !-- Normal information - neighbour data for        --
+                  !-- Repulsive Boundary Particles (BPs)             --
+                  iBP_Pointer_Info(nn,3) = i_minus1       !i-1 neighbour
+                  iBP_Pointer_Info(nn,4) = i_plus1        !i+1 neighbour
+               end if 
+             end do
+           end do
 
         end if
 
@@ -6624,3 +6688,4 @@ c
       
       return
       end
+

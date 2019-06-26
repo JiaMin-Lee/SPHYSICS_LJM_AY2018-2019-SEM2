@@ -1,7 +1,7 @@
 c234567891123456789212345679312345678941234567895123456789612345678971234567898
       
       parameter(npar=300000,nb_max=20000,num_FB_max=40)
-      parameter(nct_max=400000,nplink_max=50)
+      parameter(nct_max=400000,nplink_max=500)
       parameter(n_trapezoid_max = 2)
 
       include 'precision_xz.gen2D'
