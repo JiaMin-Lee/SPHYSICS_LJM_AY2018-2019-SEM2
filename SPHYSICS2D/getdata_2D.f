@@ -77,6 +77,7 @@ c
       read(11,*)ndt_VerletPerform
       read(11,*)ndt_FilterPerform
       read(11,*)ndt_DBCPerform
+      read(11,*)nbuffer
  
           
        write(80,*) ' '

@@ -24,7 +24,14 @@ c    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 c     --- Tait EoS for nearly incompressible water ---
       
         press_EoS = B * ( (rho_EoS/rho0)**i_gamma - 1.)
-        cs_EoS = cs0*((rho_EoS/rho0)**3)           
-      
+
+        if (i_gamma.gt.1) then 
+           i_soundgamma = (i_gamma - 1)/2
+           cs_EoS = cs0*((rho_EoS/rho0)**i_soundgamma)           
+        else
+           cs_EoS= cs0     
+        end if 
+!        cs_EoS = cs0*((rho_EoS/rho0)**3)                
+         
        return 
        end
