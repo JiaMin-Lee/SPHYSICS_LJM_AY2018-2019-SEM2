@@ -1,7 +1,7 @@
 c234567891123456789212345679312345678941234567895123456789612345678971234567898
       
       parameter(npar=300000,nb_max=20000,num_FB_max=40)
-      parameter(nct_max=400000,nplink_max=50)
+      parameter(nct_max=400000,nplink_max=500)
       parameter(n_trapezoid_max = 2)
 
       include 'precision_xz.gen2D'
@@ -64,6 +64,8 @@ c234567891123456789212345679312345678941234567895123456789612345678971234567898
      &    ,antiferHeight(num_FB_max)
      &    ,Antifer_HeightRatio(num_FB_max)
      &    ,Antifer_CoG_Z_ratio(num_FB_max)
+     &    ,x_Center(num_FB_max),z_Center(num_FB_max)
+     &    ,radiuscircle(num_FB_max),darc(num_FB_max)
       common /posCheck/ ncall1,ncall2,ncall3,ncall4,ncall5,
      1                  ncall6,ncall7,ncall8,ncall9,ncall10,four_h,
      2                  ncx,ncy,ncz,nsheet,nc(nct_max),one_over_2h,

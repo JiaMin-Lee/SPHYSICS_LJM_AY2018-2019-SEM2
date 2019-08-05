@@ -103,8 +103,8 @@ c     Kernel & Gradient corrections
 
 c     Constants
 c
-      g=9.81
-!      g=1e-4     
+!      g=9.81
+!      g=0.0     
       pi=4.0*atan(1.0)
 
 
@@ -137,6 +137,11 @@ c     vorticity printing
       write(*,*) 'vorticity printing ? (1=yes)'
       read(*,*) i_vort
       write(*,*) i_vort
+
+c     Gravity
+      write(*,*) 'Specify gravity or body force to be used'
+      read(*,*)  g
+      write(*,*) g
 
 c     pressure terms
 
@@ -174,9 +179,18 @@ c     Define pressure terms
         write(*,*) rho0
         
         !rho0=1000.0 !initial density
-        gamma=7.0
+        write(*,*) 'Enter value of gamma to be used'
+        read(*,*) gamma
+        write(*,*) gamma
+!       gamma=7.0
         expont=1./gamma
         TE0=0.0
+
+        write(*,*) ' Enter speed of sound'
+        read(*,*) Co
+        write(*,*) Co
+
+        Co2=Co*Co
 
       else if (i_EoS.eq.3) then
 
@@ -194,14 +208,17 @@ c     Define pressure terms
 
        end if 
 
-        B=coef2*rho0*g*(h_SWL)/7.0  ! B is estimated using h_SWL and coef
+        B=rho0*Co2/gamma
+!        B=coef2*rho0*g*(h_SWL)/gamma  ! B is estimated using h_SWL and coef
 
-       if (i_EoS.eq.1) then
-        Co=((B*7.0)/rho0)**.5
-       end if 
+!       if (i_EoS.eq.1) then
+!        Co=((B*gamma)/rho0)**.5
+!       end if 
 
-        write(*,*) ' B=coef2*rho0*g*(h_SWL)/7.0 =',B
-        write(*,*) ' Co=',coef,'*V=',Co
+        write(*,*) 'Reference pressure = ',B
+!        write(*,*) ' B=coef2*rho0*g*(h_SWL)/gamma =',B
+        write(*,*) ' Speed of sound = ', Co
+!        write(*,*) ' Co=',coef,'*V=',Co
 
 !      else if (i_EoS.eq.3) then
 
@@ -439,6 +456,7 @@ c	___________ File INDAT
       write(11,*)i_periodicOBs(2)
       write(11,*)i_periodicOBs(3)
       write(11,*)lattice
+      write(11,*)g
       write(11,*)i_EoS						! 10
       write(11,*)h_SWL
       write(11,*)B
@@ -479,6 +497,7 @@ c	___________ File INDAT
       write(11,*)ndt_VerletPerform
       write(11,*)ndt_FilterPerform
 	write(11,*)ndt_DBCPerform
+        write(11,*)nbuffer
 	close(11)
 	  
       xb_min = 0.0
@@ -637,12 +656,12 @@ c
 
       
        if(i_periodicOBs(1).ne.1)then  !Lateral Boundaries
-         call boundaries_left(nn,0,N1,M,0,L,dx,dy,dz,beta,theta)     !x = x1
-         call boundaries_right(nn,0,N,M,0,L,dx,dy,dz,beta,theta)     !x = x2
+         call boundaries_left(nn,0,N1,M,0,L,dx,dy,dz,beta,theta,1)     !x = x1
+         call boundaries_right(nn,0,N,M,0,L,dx,dy,dz,beta,theta,1)     !x = x2
        endif
        
        if(i_periodicOBs(3).ne.1)then  !Lateral Boundaries
-         call boundaries_bottom(nn,0,N,M,0,L,dx,dy,dz,beta,theta)    !z = z1
+         call boundaries_bottom(nn,0,N,M,0,L,dx,dy,dz,beta,theta,1)    !z = z1
        endif
 
 
@@ -767,6 +786,8 @@ c
 	call fluid_particles(nn,N,M,L,dx,dy,dz,expont,g,i_correct_pb,
      +            XXmin,XXmax,YYmin,YYmax,ZZmin,ZZmax,beta,theta)
 
+        nbuffer=0
+
 	np=nn
 	write(*,*) 'No of Particles',np
 
@@ -858,13 +879,13 @@ c
 
 
        if(i_periodicOBs(1).ne.1)then  !Lateral Boundaries
-         call boundaries_left(nn,0,N1,M,0,L,dx,dy,dz,beta,theta)     !x =x1
-         call boundaries_right(nn,0,N,M,0,L,dx,dy,dz,beta,theta)     !x =x2
+         call boundaries_left(nn,0,N1,M,0,L,dx,dy,dz,beta,theta,1)     !x =x1
+         call boundaries_right(nn,0,N,M,0,L,dx,dy,dz,beta,theta,1)     !x =x2
        endif
 
        if(i_periodicOBs(3).ne.1)then  !Lateral Boundaries
-         call boundaries_bottom(nn,0,N,M,0,L,dx,dy,dz,beta,theta)    !z =z1
-!         call boundaries_top(nn,0,N,M,0,L,dx,dy,dz,theta,v_lid)     !z=z2
+         call boundaries_bottom(nn,0,N,M,0,L,dx,dy,dz,beta,theta,1)    !z =z1
+         call boundaries_top(nn,0,N,M,0,L,dx,dy,dz,beta,theta,1)     !z=z2
        endif
 
 
@@ -889,7 +910,7 @@ c
 
 !          end if
        
-!           call boundaries_top(nn,0,N,M,0,L,dx,dy,dz,theta,v_lid)
+!           call boundaries_top(nn,0,N,M,0,L,dx,dy,dz,beta,theta)
 !        end if
            
         do while (iopt_addwall.eq.1)
@@ -934,7 +955,7 @@ c
         write(*,*) 'No of B. Fixed Particles',nbf
 
 
-        call boundaries_top(nn,0,N,M,0,L,dx,dy,dz,theta,v_lid)
+!        call boundaries_top(nn,0,N,M,0,L,dx,dy,dz,beta,theta)
 
         open(66,file='wavemaker')
 
@@ -1010,6 +1031,9 @@ c
 
         call fluid_particles(nn,N,M,L,dx,dy,dz,expont,g,i_correct_pb,
      +            XXmin,XXmax,YYmin,YYmax,ZZmin,ZZmax,beta,theta)
+       
+        nbuffer=0
+
         np=nn
         write(*,*) 'No of Particles',np
 
@@ -1145,7 +1169,7 @@ c     ______ plane
        if(i_periodicOBs(1).ne.1)then  
 !         if(iopt_wavemaker.ne.1)then
          if(iopt_wavemaker.ne.1.and.iopt_gate.ne.1)then
-           call boundaries_left(nn,0,N1,M,0,L,dx,dy,dz,0.,0.)      !x = x1
+           call boundaries_left(nn,0,N1,M,0,L,dx,dy,dz,0.,0.,1)      !x = x1
          endif
        endif
 
@@ -1153,13 +1177,13 @@ c     _______ tilted plane
        
 
        if(i_periodicOBs(1).ne.1)then  
-         call boundaries_right (nn,N1,N,M,0,L,dx,dy,dz,beta,0.)    !x = x2
+         call boundaries_right (nn,N1,N,M,0,L,dx,dy,dz,beta,0.,1)    !x = x2
        endif
        if(i_periodicOBs(3).ne.1)then  !Lateral Boundaries
-         call boundaries_bottom(nn,0,N1,M,0,L,dx,dy,dz,0.  ,0.)    !flat bottom plane
-         call boundaries_top(nn,0,N,M,0,L,dx,dy,dz,0.,0.)     !z=z2
+         call boundaries_bottom(nn,0,N1,M,0,L,dx,dy,dz,0.,0.,1)    !flat bottom plane
+         call boundaries_top(nn,0,N,M,0,L,dx,dy,dz,0.,0.,1)     !z=z2
          if(beta.gt.0.)then
-           call boundaries_bottom(nn,N1,N,M,0,L,dx,dy,dz,beta,0.)    !inclined beach plane
+           call boundaries_bottom(nn,N1,N,M,0,L,dx,dy,dz,beta,0.,1)    !inclined beach plane
          endif
        endif
      
@@ -1305,6 +1329,8 @@ c	profile of the wave
      +                ,ZZmin,ZZmax,g,dx,dy,dz,expont)
       endif
 
+      nbuffer=0
+
       np=nn
       write(*,*) 'No of Particles',np
 
@@ -1388,15 +1414,16 @@ c     _________ Generate a SPECIFIC GEOMETRY
          print*,'X-Direction: ',i_periodicOBs(1)
          print*,'Y-Direction: ',i_periodicOBs(2)
          print*,'Z-Direction: ',i_periodicOBs(3)
-         if(i_periodicOBs(1).eq.1.or.i_periodicOBs(3).eq.1)then
-           print*
-           print*,'Periodic Boundaries in X & Z-Directions'
-           print*,'Not yet activated in code'
-           print*
-           stop
-         else if((i_periodicOBs(1).ne.0.and.i_periodicOBs(1).ne.1).or.
-     &           (i_periodicOBs(2).ne.0.and.i_periodicOBs(2).ne.1).or.
-     &           (i_periodicOBs(3).ne.0.and.i_periodicOBs(3).ne.1))then    
+!         if(i_periodicOBs(1).eq.1.or.i_periodicOBs(3).eq.1)then
+!           print*
+!           print*,'Periodic Boundaries in X & Z-Directions'
+!           print*,'Not yet activated in code'
+!           print*
+!           stop
+!         else if((i_periodicOBs(1).ne.0.and.i_periodicOBs(1).ne.1).or.
+          if((i_periodicOBs(1).ne.0.and.i_periodicOBs(1).ne.1).or.
+     &       (i_periodicOBs(2).ne.0.and.i_periodicOBs(2).ne.1).or.
+     &       (i_periodicOBs(3).ne.0.and.i_periodicOBs(3).ne.1))then    
            print*
            print*,'Not a valid Periodic Boundaries Option'
            print*
@@ -1456,12 +1483,11 @@ c     _________ Generate a SPECIFIC GEOMETRY
             write(*,*) 'beta_deg ',beta_deg
             beta = beta_deg*pi/180.0
            
-!            i_periodicOBs(1)=0
-!            i_periodicOBs(2)=0
-!            i_periodicOBs(3)=0
-       
 !   	nn=0	! Initial number of particles
 
+            write(*,*) ' How many layers of boundary particles ?? '  
+            read(*,*)  nlayers
+            write(*,*) 'No. of boundary layers  ',nlayers
 
 !            N =nint((vlxend-vlxstart)/dx)
             N1=nint(vlxstart/dx)
@@ -1474,23 +1500,28 @@ c     _________ Generate a SPECIFIC GEOMETRY
           write(*,*) ' Dimension (pixels)', N,M,L
                           
           if(iboundary.eq.1.and.i_periodicOBs(1).ne.1)then  
-            call boundaries_left(nn,N1,N2,M,L1,L2,dx,dy,dz,0.,0.)      !x = x1
+            call boundaries_left(nn,N1,N2,M,L1,L2,dx,dy,dz,0.,0.,      !x = x1
+     +                           nlayers)
           endif
    
           if(iboundary.eq.2.and.i_periodicOBs(1).ne.1)then  
-            call boundaries_right (nn,N1,N2,M,L1,L2,dx,dy,dz,beta,0.)    !x = x2
+            call boundaries_right(nn,N1,N2,M,L1,L2,dx,dy,dz,beta,0.,   !x = x2
+     +                            nlayers)      
           endif
 
-          if(iboundary.eq.3.and.i_periodicOBs(3).ne.1)then  !Lateral Boundaries
-            call boundaries_bottom(nn,N1,N2,M,L1,L2,dx,dy,dz,0.,0.)    !flat bottom plane   
+!          if(iboundary.eq.3.and.i_periodicOBs(3).ne.1)then  !Lateral Boundaries
+          if(iboundary.eq.3)then  !Lateral Boundaries
+            call boundaries_bottom(nn,N1,N2,M,L1,L2,dx,dy,dz,0.,0.,    !flat bottom plane   
+     +                             nlayers)
 !            if(beta.gt.0.)then
 !             call boundaries_bottom(nn,N1,N2,M,L1,L2,dx,dy,dz,beta,0.)    !inclined beach plane
 !            endif
           endif
 
-          if(iboundary.eq.4.and.i_periodicOBs(3).ne.1)then  
-            call boundaries_top(nn,N1,N2,M,L1,L2,dx,dy,dz,0.,0.) 
-          endif
+!          if(iboundary.eq.4.and.i_periodicOBs(3).ne.1)then  
+         if(iboundary.eq.4)then  
+           call boundaries_top(nn,N1,N2,M,L1,L2,dx,dy,dz,0.,0.,nlayers) 
+         endif
 
          write(*,*) 'Do you want to print another geometry/line?'
          read(*,*) iyesorno
@@ -1601,9 +1632,29 @@ c     _________ Generate a SPECIFIC GEOMETRY
        enddo
        !write(88,*)num_FB
        close(88)
-       
-       nb=nn
-       write(*,*) 'No of B. Particles',nb
+      
+        nb11=nn
+                                                           
+      write(*,*) ' Add water for buffer zone ?? (1=y)'
+      read(*,*)    i_buffer
+      write(*,*)   i_buffer
+                                                           
+      if(i_buffer.eq.1) then       
+        call fill_part(nn,XXmin,XXmax,YYmin,YYmax,ZZmin,ZZmax,
+     +               g,dx,dy,dz,expont,beta,0.)
+                                                           
+      end if 
+                                                          
+      if (i_buffer.eq.1) then  
+         nbuffer=nn-nb11
+      else
+         nbuffer=0
+      end if
+                                                           
+      write(*,*) 'No of Buffer Particles',nbuffer
+ 
+      nb=nn
+      write(*,*) 'No of B. Particles',nb
 
       i_correct_pb=1
 
@@ -1631,6 +1682,24 @@ c	______ water in the flat region
      +               g,dx,dy,dz,expont,beta,0.)
       endif
 
+!      np11=nn
+
+!      write(*,*) ' Add water for buffer zone ?? (1=y)'
+!      read(*,*)    i_buffer
+!      write(*,*)   i_buffer
+
+!      if(i_buffer.eq.1) then       
+!         call fill_part(nn,XXmin,XXmax,YYmin,YYmax,ZZmin,ZZmax,
+!     +               g,dx,dy,dz,expont,beta,0.)
+!      end if 
+
+!      if (i_buffer.eq.1) then  
+!         nbuffer=nn-np11
+!      else
+!         nbuffer=0
+!      end if
+    
+!      write(*,*) 'No of Buffer Particles',nbuffer
 
 c	profile of the wave
 
@@ -1708,7 +1777,9 @@ c	_________________ SUBROUTINE EXTERNAL_GEOMETRY
 
 c     _________________ SUBROUTINE BOUNDARIES LEFT
 
-      subroutine boundaries_left(NN,N0,N,M,L0,L,dx,dy,dz,beta,theta)
+      subroutine boundaries_left(NN,N0,N,M,L0,L,dx,dy,dz,beta,theta,
+     +                           nlayers)
+      
       include 'common.gen2D'
 
       ! Lateral Walls: Left  x = x1
@@ -1729,10 +1800,12 @@ c     _________________ SUBROUTINE BOUNDARIES LEFT
           else
             Lini=L_start
           end if 
-          do k=Lini,L
-            nn=nn+1
-            call pos_veloc(nn,i*dx,j*dy,k*dz,0.,0.,0.)
-          enddo
+          do n=0,(nlayers-1)
+            do k=Lini,L
+              nn=nn+1
+              call pos_veloc(nn,(i-n)*dx,j*dy,k*dz,0.,0.,0.)
+            enddo
+          end do        !end no. of layers
         enddo
 
 	 !- Outer Layer -
@@ -1745,10 +1818,12 @@ c     _________________ SUBROUTINE BOUNDARIES LEFT
             else
               Lini=L_start
             end if 
-            do k=Lini,L
+            do n=0,(nlayers-1)
+             do k=Lini,L
               nn=nn+1
-              call pos_veloc(nn,(i-0.5)*dx,j*dy,(k-0.5)*dz,0.,0.,0.)
-            enddo
+              call pos_veloc(nn,((i-n)-0.5)*dx,j*dy,(k-0.5)*dz,0.,0.,0.)
+             enddo
+            enddo               !end no. of layers
           enddo
   
         
@@ -1782,9 +1857,11 @@ c     _________________ SUBROUTINE BOUNDARIES LEFT
           else
             L_start = L0
           end if 
-          do k=L_start,L_finish
-            nn=nn+1
-            call pos_veloc(nn,i*dx,j*dy,k*dz,0.,0.,0.)
+
+          do n=0,(nlayers-1)
+           do k=L_start,L_finish
+             nn=nn+1
+             call pos_veloc(nn,(i-n)*dx,j*dy,k*dz,0.,0.,0.)
            !2-D Normals
               if(k.eq.L_start)then
                 i_minus1 = nn + 1
@@ -1799,9 +1876,9 @@ c     _________________ SUBROUTINE BOUNDARIES LEFT
               !-- Normal information - neighbour data for        --
               !-- Repulsive Boundary Particles (BPs)             --
               iBP_Pointer_Info(nn,3) = i_minus1       !i-1 neighbour     
-              iBP_Pointer_Info(nn,4) = i_plus1        !i+1 neighbour
-          
-          enddo
+              iBP_Pointer_Info(nn,4) = i_plus1        !i+1 neighbour        
+           enddo
+          enddo                 !end no. of layers
         enddo
 
       end if     !End of:  if(iBC.eq.1)then
@@ -1811,7 +1888,9 @@ c     _________________ SUBROUTINE BOUNDARIES LEFT
 
 c     _________________ SUBROUTINE BOUNDARIES RIGHT
 
-      subroutine boundaries_right(NN,N0,N,M,L0,L,dx,dy,dz,beta,theta)
+      subroutine boundaries_right(NN,N0,N,M,L0,L,dx,dy,dz,beta,theta,
+     +                            nlayers)
+
       include 'common.gen2D'
 
       ! Lateral Walls: Right  x = x2
@@ -1834,35 +1913,38 @@ c     _________________ SUBROUTINE BOUNDARIES RIGHT
 
         !- Inner Layer -
         do j=M_start,M_finish
-          i=N
+          i=N_finish
           if (i_geometry.ne.5) then
              hk=(i-N0)*dx*tan(beta)+j*dy*tan(theta)
              Lini=nint(hk/dz)
           else
              Lini=L_start
           end if 
-          do k=Lini,L
+          do n=0,(nlayers-1) 
+           do k=Lini,L
             nn=nn+1
-            call pos_veloc(nn,i*dx,j*dy,k*dz,0.,0.,0.)
-          enddo
+            call pos_veloc(nn,(i+n)*dx,j*dy,k*dz,0.,0.,0.)
+           enddo        
+          enddo                !end no. of layers 
         enddo
 
 	 !- Outer Layer -
         
           do j=M_start,M_finish
-            i=N
+            i=N_finish
             if (i_geometry.ne.5) then
                hk=(i-N0)*dx*tan(beta)+j*dy*tan(theta)
                Lini=nint(hk/dz)
             else
                Lini=L_start
             end if 
-            do k=Lini,L
-              nn=nn+1
-              call pos_veloc(nn,(i+0.5)*dx,j*dy,(k-0.5)*dz,0.,0.,0.)
-            enddo
+            do n=0,(nlayers-1)
+             do k=Lini,L
+               nn=nn+1
+               call pos_veloc(nn,(i+n+0.5)*dx,j*dy,(k-0.5)*dz,0.,0.,0.)
+             enddo
+            enddo                 !end no. of layers
           enddo
-  
         
       else if(iBC.eq.1)then   !Repulsive BC - Repulsive Force Particles with Normals
         
@@ -1877,9 +1959,10 @@ c     _________________ SUBROUTINE BOUNDARIES RIGHT
           else
              L_start = L0
           end if
-          do k=L_start,L_finish
-            nn=nn+1
-            call pos_veloc(nn,i*dx,j*dy,k*dz,0.,0.,0.)
+          do n=0,(nlayers-1)
+           do k=L_start,L_finish
+             nn=nn+1
+             call pos_veloc(nn,(i+n)*dx,j*dy,k*dz,0.,0.,0.)
     
               if(k.eq.L_start)then
                 i_minus1 = nn
@@ -1896,7 +1979,8 @@ c     _________________ SUBROUTINE BOUNDARIES RIGHT
               iBP_Pointer_Info(nn,3) = i_minus1       !i-1 neighbour     
               iBP_Pointer_Info(nn,4) = i_plus1        !i+1 neighbour
     
-          enddo
+           enddo
+          enddo                         !end no. of layers
         enddo
         
       end if     !End of:  if(iBC.eq.1)then
@@ -1907,7 +1991,9 @@ c     _________________ SUBROUTINE BOUNDARIES RIGHT
 
 c     _________________ SUBROUTINE BOUNDARIES BOTTOM
 
-      subroutine boundaries_bottom(NN,N0,N,M,L0,L,dx,dy,dz,beta,theta)
+      subroutine boundaries_bottom(NN,N0,N,M,L0,L,dx,dy,dz,beta,theta,
+     +                             nlayers)
+
       include 'common.gen2D'
 
       double precision hk
@@ -1941,7 +2027,8 @@ c     _________________ SUBROUTINE BOUNDARIES BOTTOM
         endif
 
         !- Inner Layer -
-        do i=N_start+1,N_finish   !N0+1,N-1     !do i=N0,N   <--- Be careful here not to place particles ontop of each other
+        do n=0, (nlayers-1)
+         do i=N_start+1,N_finish   !N0+1,N-1     !do i=N0,N   <--- Be careful here not to place particles ontop of each other
           do j=M_start,M_finish
             if (i_geometry.ne.5) then
                hk=(i-N0)*dx*tan(beta)+j*dy*tan(theta)
@@ -1950,10 +2037,11 @@ c     _________________ SUBROUTINE BOUNDARIES BOTTOM
             else
                k = L
                nn=nn+1
-               call pos_veloc(nn,i*dx,j*dy,k*dz,0.,0.,0.)
+               call pos_veloc(nn,i*dx,j*dy,(k-n)*dz,0.,0.,0.)
             end if
           enddo
-        enddo
+         enddo
+        enddo           ! end no. of layers
 
         if(i_periodicOBs(1).eq.1)then
           !N_start = N_start+1
@@ -1962,23 +2050,23 @@ c     _________________ SUBROUTINE BOUNDARIES BOTTOM
 
         !- Outer Layer -
 
+         do n=0, (nlayers-1)
           do i=N_start,N_finish   !N0,N-1
             do j=0,M
-              if (i_geometry.ne.5) then 
-                 hk=(i-N0)*dx*tan(beta)+j*dy*tan(theta)
-                 nn=nn+1
-                 call pos_veloc(nn,(i+0.5)*dx,j*dy,hk-0.5*dz,0.,0.,0.)
+              if(i_geometry.ne.5) then 
+                hk=(i-N0)*dx*tan(beta)+j*dy*tan(theta)
+                nn=nn+1
+                call pos_veloc(nn,(i+0.5)*dx,j*dy,hk-0.5*dz,0.,0.,0.)
               else
-                 k = L0
-                 nn=nn+1
-                 call pos_veloc(nn,(i+0.5)*dx,j*dy,(k-0.5)*dz,0.,0.,0.)
+                k = L0
+                nn=nn+1
+                call pos_veloc(nn,(i+0.5)*dx,j*dy,(k-n-0.5)*dz,0.,0.,0.)
               end if
             enddo
           enddo
-
+         enddo                  ! end no. of layers
         
-      else if(iBC.eq.1)then   !Repulsive BC - Repulsive Force Particles with Normals
-        
+      else if(iBC.eq.1)then   !Repulsive BC - Repulsive Force Particles with Normals     
 
         if(i_geometry.eq.2)then   !Sloping Beach
           !N_finish = int((x_beach_start - 0.0)/dx) + 1
@@ -1999,6 +2087,7 @@ c     _________________ SUBROUTINE BOUNDARIES BOTTOM
           N_finish=N
         end if
 
+       do n=0,(nlayers-1) 
         do i=N_start,N_finish
           do j=M_start,M_finish         !do j=0,M
             if (i_geometry.ne.5) then
@@ -2008,9 +2097,9 @@ c     _________________ SUBROUTINE BOUNDARIES BOTTOM
             else
                k = L
                nn=nn+1              
-               call pos_veloc(nn,i*dx,j*dy,k*dz,0.,0.,0.)
+               call pos_veloc(nn,i*dx,j*dy,(k-n)*dz,0.,0.,0.)
             end if
-                
+
               if(i.eq.N_start)then
                 i_minus1 = nn
                 i_plus1  = nn + 1
@@ -2023,11 +2112,11 @@ c     _________________ SUBROUTINE BOUNDARIES BOTTOM
               end if
               !-- Normal information - neighbour data for        --
               !-- Repulsive Boundary Particles (BPs)             --
-              iBP_Pointer_Info(nn,3) = i_minus1       !i-1 neighbour     
+              iBP_Pointer_Info(nn,3) = i_minus1       !i-1 neighbour
               iBP_Pointer_Info(nn,4) = i_plus1        !i+1 neighbour
-  
           enddo
         enddo
+       enddo                    !end no. of layers
         
       end if     !End of:  if(iBC.eq.1)then
 
@@ -2037,12 +2126,13 @@ c     _________________ SUBROUTINE BOUNDARIES BOTTOM
 
 c     _________________ SUBROUTINE BOUNDARIES TOP
 
-      subroutine boundaries_top(NN,N0,N,M,L0,L,dx,dy,dz,theta,v_lid)
+      subroutine boundaries_top(NN,N0,N,M,L0,L,dx,dy,dz,beta,theta,
+     +                          nlayers)
       include 'common.gen2D'
 
       double precision hk
 
-      !- Top t
+      !- velocity of boundary
       if(i_geometry.eq.4) then
         print*,' Lid starts at         ',nn+1
         print*,' Velocity of lid             ',v_lid
@@ -2073,26 +2163,27 @@ c     _________________ SUBROUTINE BOUNDARIES TOP
         endif
 
         !- Inner Layer -
+       do n=0, (nlayers-1)
         do j=M_start,M_finish
 !         k = L
           do  i=N_start+1,N_finish
            if (i_geometry.eq.4) then
                k = L
                nn = nn + 1
-               call pos_veloc(nn,i*dx,j*dy,k*dz,v_lid,0.,0.)
+               call pos_veloc(nn,i*dx,j*dy,(k+n)*dz,v_lid,0.,0.)
             else if (i_geometry.eq.5) then
                k = L0
                nn = nn + 1
-               call pos_veloc(nn,i*dx,j*dy,k*dz,0.,0.,0.)
+               call pos_veloc(nn,i*dx,j*dy,(k+n)*dz,0.,0.,0.)
             else 
                k = L
                nn = nn +1
-               call pos_veloc(nn,i*dx,j*dy,k*dz,0.,0.,0.)
+               call pos_veloc(nn,i*dx,j*dy,(k+n)*dz,0.,0.,0.)
             end if
-
           enddo
         enddo
-
+       enddo                    !end no. of layers
+        
         if(i_periodicOBs(1).eq.1)then
           !N_start = N_start+1
           N_finish = N_finish-1
@@ -2100,6 +2191,7 @@ c     _________________ SUBROUTINE BOUNDARIES TOP
 
         !- Outer Layer -
 
+         do n=0, (nlayers-1)
           do j=0,M   !N0,N-1
 !            k=L
             do i=N_start,N_finish 
@@ -2107,53 +2199,43 @@ c     _________________ SUBROUTINE BOUNDARIES TOP
             if (i_geometry.eq.4) then
                k = L
                nn = nn+1
-               call pos_veloc(nn,(i+0.5)*dx,j*dy,(k+0.5)*dz,v_lid,0.,0.)
+               call pos_veloc(nn,(i+0.5)*dx,j*dy,(k+n+0.5)*dz,v_lid,0.,
+     +                        0.)
             else if (i_geometry.eq.5) then
                k = L0
                nn = nn + 1
-               call pos_veloc(nn,(i+0.5)*dx,j*dy,(k+0.5)*dz,0.,0.,0.)
+               call pos_veloc(nn,(i+0.5)*dx,j*dy,(k+n+0.5)*dz,0.,0.,0.)
             else
                k = L
                nn = nn + 1
-               call pos_veloc(nn,(i+0.5)*dx,j*dy,(k+0.5)*dz,0.,0.,0.)
+               call pos_veloc(nn,(i+0.5)*dx,j*dy,(k+n+0.5)*dz,0.,0.,0.)
             end if
-
             enddo
           enddo
-
+         enddo                  !end no. of layers
 
       else if(iBC.eq.1)then   !Repulsive BC - Repulsive Force Particles with Normals
 
         N_start = N0
         N_finish = N
-!        k=L
         
+       do n=0, (nlayers-1)
         do i=N_start,N_finish
           do j=M_start,M_finish         !do j=0,M
-
-!            nn=nn+1
 
            if (i_geometry.eq.4) then
                k = L
                nn = nn + 1
-               call pos_veloc(nn,i*dx,j*dy,k*dz,v_lid,0.,0.)
+               call pos_veloc(nn,i*dx,j*dy,(k+n)*dz,v_lid,0.,0.)
             else if (i_geometry.eq.5) then
                k = L0
                nn = nn + 1
-               call pos_veloc(nn,i*dx,j*dy,k*dz,0.,0.,0.)
+               call pos_veloc(nn,i*dx,j*dy,(k+n)*dz,0.,0.,0.)
             else 
                k = L
                nn = nn +1
-               call pos_veloc(nn,i*dx,j*dy,k*dz,0.,0.,0.)
+               call pos_veloc(nn,i*dx,j*dy,(k+n)*dz,0.,0.,0.)
             end if
-
-!            if (i_geometry.eq.4) then
-!               call pos_veloc(nn,i*dx,j*dy,k*dz,v_lid,0.,0.)
-!            else
-!               call pos_veloc(nn,i*dx,j*dy,k*dz,0.,0.,0.)
-!            end if     
-
-!            call pos_veloc(nn,i*dx,j*dy,k*dz,v_lid,0.,0.)
 
               if(i.eq.N_start)then
                 i_minus1 = nn + 1
@@ -2172,6 +2254,7 @@ c     _________________ SUBROUTINE BOUNDARIES TOP
 
           enddo
         enddo
+       enddo            !end no. of layers
 
       end if     !End of:  if(iBC.eq.1)then
 
@@ -2255,8 +2338,8 @@ c	____________________ SUBROUTINE PRESSURE
       include 'common.gen2D'
 
 
-!      rhop(nn)=rho0
-      rhop(nn)=rho0*(1.0+rho0*g*(ZZmax-zp(nn))/B)**expont
+      rhop(nn)=rho0
+!      rhop(nn)=rho0*(1.0+rho0*g*(ZZmax-zp(nn))/B)**expont
       p(nn)=B*((rhop(nn)/rho0)**gamma-1.0)
 	
 	pm(nn)=vnorm_mass*rhop(nn)*dx*dz
@@ -2284,22 +2367,28 @@ c	____________________ SUBROUTINE CORRECT_P_BOUNDARIES
      +			                 YYmax,ZZmin,ZZmax,dx,dy,dz)
       include 'common.gen2D'
 
-	dr=dx*dz
+	  dr=dx*dz
 
+          if (iopt_FloatingObject_type(num_FB).ne.3) then
+             nbend=nb
+          else if (iopt_FloatingObject_type(num_FB).eq.3) then
+             nbend=nbfm
+          end if 
 
-	do nn=1,nb
+	  do nn=1,nbend
 	   if (xp(nn).le.XXmax. and. xp(nn).ge.XXmin.and.
      +	       Zp(nn).le.ZZmax. and. zp(nn).ge.ZZmin) then
 
-               rhop(nn)=rho0*(1.0+rho0*g*(ZZmax-zp(nn))/B)**expont
+               rhop(nn)=rho0
+!               rhop(nn)=rho0*(1.0+rho0*g*(ZZmax-zp(nn))/B)**expont
 	   else
 		     rhop(nn)=rho0
 	   endif
 
          p(nn)=B*((rhop(nn)/rho0)**gamma-1.0)
 
-	   if (IBC.eq.1) then
-            pm(nn)=rhop(nn)*dr
+	   if (IBC.eq.1)then
+                pm(nn)=rhop(nn)*dr
 	   else if (IBC.eq.2) then
             if(nn.gt.nbfm) then
                pm(nn)=rhop(nn)*dr ! only one layer of particles for Floating Bodies faces
@@ -2451,7 +2540,8 @@ c	____________________ SUBROUTINE FILL_PART
        
        if(iBC.eq.1)then    !Repulsive force Boundary Condition             
          L_ini = L_ini-1
-         ZZmin = (L_ini+0.5)*dz
+!         ZZmin = (L_ini+0.5)*dz
+         ZZmin = (L_ini+1)*dz
        end if
                   
        write(*,*) 'Recalculated max and min X ',XXmax,XXmin
@@ -2631,6 +2721,42 @@ c     &             .or.i_trapezoid.lt.n_trapezoid)
                    else
                      i_outsideObject = 1
                    end if
+                 else if(iopt_FloatingObject_type(i_num_FB).eq.3)then   !Circle
+                   !- Transform particle coordinates to Object Frame of reference -
+                   !- rotate about Centre of Gravity (CofG) - 
+                   dx_newParticle = x1 - Box_XC(i_num_FB)
+                   dz_newParticle = z1 - Box_ZC(i_num_FB)
+                   !- transformed coordinates -
+                   x1_Tr =   dx_newParticle*cos(body_Angle(i_num_FB))
+     &                     + dz_newParticle*sin(body_Angle(i_num_FB))
+                   z1_Tr = - dx_newParticle*sin(body_Angle(i_num_FB))
+     &                     + dz_newParticle*cos(body_Angle(i_num_FB))
+                   r1_Tr = sqrt(x1_Tr**2+z1_Tr**2)
+                   radiusmin=radiuscircle(i_num_FB)
+!                   clearance_factor = 0.99
+!                   xtmin = - 0.5*XcylinderDimension(i_num_FB)
+!     &                     - clearance_factor*dx   !+ 0.5*dx
+!                   xtmax =   0.5*XcylinderDimension(i_num_FB)
+!     &                     + clearance_factor*dx   !+ 0.50*dx
+!                   ztmin = - 0.5*ZcylinderDimension(i_num_FB)
+!     &                     - clearance_factor*dz   !+ 0.5*dz
+!                   ztmax =   0.5*ZcylinderDimension(i_num_FB)
+!     &                     + clearance_factor*dz
+!                   if(x1_Tr.gt.xtmin.and.x1_Tr.lt.xtmax)then
+!                     if((z1_Tr.gt.ztmin.and.z1_Tr.lt.ztmax))then  !WP is within x-range of cylinder but above or below
+!                       i_outsideObject = 0
+!                     else
+!                       i_outsideObject = 1
+!                     endif
+!                   else
+!                     i_outsideObject = 1
+!                   end if
+                    
+                    if(r1_Tr.le.radiusmin)then
+                      i_outsideObject = 0 
+                    else 
+                      i_outsideObject = 1
+                    end if   
                  elseif(iopt_FloatingObject_type(i_num_FB).eq.2)then   !Antifer
                    !- Transform particle coordinates to Object Frame of reference -
                    !- rotate about bottom left-hand corner - 
@@ -2717,6 +2843,7 @@ c                   nn=nn+1
 c                   call pos_veloc(nn,x1,y1,z1,0.,0.,0.)
 c                   call pressure(nn,ZZmax,dx,dy,dz,expont,g)
 c               else if(iBC.eq.1)then   !Repulsive BC
+
                  hk2 = (x1-N_ini*dx)*tan(beta)+j*dy*tan(theta)   
                  if(z1.gt.(1.001*hk2+0.25*dz).and.
      &              z1.lt.1.001*ZZmax.and.
@@ -3460,6 +3587,11 @@ c	____________________ SUBROUTINE GATE
 	write(*,*) ' tgate ??'
 	read(*,*) tgate
 	write(*,*) tgate
+        
+	write(*,*) ' Number of layers for gate??'
+	write(*,*) ' nlayers??'
+	read(*,*) nlayers
+	write(*,*) nlayers
 
       M_end=0
       M_ini=0
@@ -3476,16 +3608,14 @@ c	____________________ SUBROUTINE GATE
 	ngate_ini=nn+1
 
         if (N_ini.eq.N_end) then        !vertical gate
-	   do j=M_ini,M_end
+          do n=0,(nlayers-1)
+  	   do j=M_ini,M_end
              do k=L_ini,L_end
 	           nn=nn+1
-	        call pos_veloc(nn,Xwall,j*dy,k*dz,0.,0.,0.)
+	        call pos_veloc(nn,(Xwall-n*dx),j*dy,k*dz,0.,0.,0.)
 
-	        if((j+0.5)*dy.le.YYmax.and.(k+0.5)*dz.le.ZZmax) then
-  	         nn=nn+1
-	         call pos_veloc(nn,Xwall+0.5*dx,(j+0.5)*dy,
-     +                                (k+0.5)*dz,0.,0.,0.)
-	        endif
+              ! added this column *** this is for LEFT boundary
+              ! condition
 
                 if (iBC.eq.1) then  
              !2-D Normals
@@ -3505,27 +3635,53 @@ c	____________________ SUBROUTINE GATE
                    iBP_Pointer_Info(nn,4) = i_plus1        !i+1 neighbour      
 
                 end if
+               ! column *** ended
+
+                if (iBC.eq.2) then
+	        if((j+0.5)*dy.le.YYmax.and.(k+0.5)*dz.le.ZZmax) then
+  	         nn=nn+1
+	         call pos_veloc(nn,Xwall+(0.5-n)*dx,(j+0.5)*dy,
+     +                                (k+0.5)*dz,0.,0.,0.)
+	        endif
+                end if
+
+!                if (iBC.eq.1) then  
+!             !2-D Normals
+!                   if(k.eq.L_ini)then
+!                     i_minus1 = nn + 1
+!                     i_plus1  = nn 
+!                  else if(k.eq.L_end)then
+!                     i_minus1 = nn 
+!                     i_plus1  = nn - 1
+!                   else
+!                     i_minus1 = nn + 1
+!                     i_plus1  = nn - 1
+!                   end if
+!                   !-- Normal information - neighbour data for        --
+!                   !-- Repulsive Boundary Particles (BPs)             --
+!                   iBP_Pointer_Info(nn,3) = i_minus1       !i-1 neighbour     
+!                   iBP_Pointer_Info(nn,4) = i_plus1        !i+1 neighbour      
+
+!                end if
               end do
             end do
+           enddo        !end no. of layers
 
         else                             !horizontal gate
+          do n=0, (nlayers-1)
 	   do j=M_ini,M_end
              do i=N_ini,N_end
 	           nn=nn+1
-	        call pos_veloc(nn,i*dx,j*dy,ZZmax,0.,0.,0.)
+	        call pos_veloc(nn,i*dx,j*dy,(ZZmax+n*dx),0.,0.,0.)
 
-	        if((j+0.5)*dy.le.YYmax.and.(k+0.5)*dz.le.ZZmax) then
-  	         nn=nn+1
-	         call pos_veloc(nn,(i+0.5)*dx,(j+0.5)*dy,
-     +                                ZZmax+0.5*dz,0.,0.,0.)
-	        endif
-
+              ! added this column *** this is for TOP boundary
+              ! condition
                 if (iBC.eq.1) then  
                    if(i.eq.N_ini)then
-                     i_minus1 = nn + 1
-                     i_plus1  = nn
+                     i_minus1 = nn +1 
+                     i_plus1  = nn 
                    else if(i.eq.N_end)then
-                     i_minus1 = nn
+                     i_minus1 = nn 
                      i_plus1  = nn - 1
                    else
                      i_minus1 = nn + 1
@@ -3536,48 +3692,37 @@ c	____________________ SUBROUTINE GATE
                    iBP_Pointer_Info(nn,3) = i_minus1       !i-1 neighbour
                    iBP_Pointer_Info(nn,4) = i_plus1        !i+1 neighbour
                 end if 
+               ! column *** ended
+
+	        if (iBC.eq.2) then
+                if((j+0.5)*dy.le.YYmax.and.(k+0.5)*dz.le.ZZmax) then
+  	         nn=nn+1
+	         call pos_veloc(nn,(i+0.5)*dx,(j+0.5)*dy,
+     +                                ZZmax+(n+0.5)*dz,0.,0.,0.)
+	        endif
+                end if
+                
+!               if (iBC.eq.1) then  
+!                  if(i.eq.N_ini)then
+!                    i_minus1 = nn +1 
+!                    i_plus1  = nn 
+!                  else if(i.eq.N_end)then
+!                    i_minus1 = nn 
+!                    i_plus1  = nn - 1
+!                  else
+!                    i_minus1 = nn + 1
+!                    i_plus1  = nn - 1
+!                  end if
+!                  !-- Normal information - neighbour data for        --
+!                  !-- Repulsive Boundary Particles (BPs)             --
+!                  iBP_Pointer_Info(nn,3) = i_minus1       !i-1 neighbour
+!                  iBP_Pointer_Info(nn,4) = i_plus1        !i+1 neighbour
+!               end if 
               end do
-            end do
+           end do
+          enddo                 !end no. of layers
 
-        end if
-
-!              if (iBC.eq.1) then  
-           !2-D Normals
-!                if (N_ini.eq.N_end) then       !Vertical gate
-!                   if(k.eq.L_ini)then
-!                     i_minus1 = nn + 1
-!                     i_plus1  = nn 
-!                   else if(k.eq.L_end)then
-!                     i_minus1 = nn 
-!                     i_plus1  = nn - 1
-!                   else
-!                     i_minus1 = nn + 1
-!                     i_plus1  = nn - 1
-!                   end if
-                   !-- Normal information - neighbour data for        --
-                   !-- Repulsive Boundary Particles (BPs)             --
-!                   iBP_Pointer_Info(nn,3) = i_minus1       !i-1 neighbour     
-!                   iBP_Pointer_Info(nn,4) = i_plus1        !i+1 neighbour      
-
-!                else                            !Horizontal gate
-!                   if(i.eq.N_ini)then
-!                     i_minus1 = nn + 1
-!                     i_plus1  = nn
-!                   else if(i.eq.N_end)then
-!                     i_minus1 = nn
-!                     i_plus1  = nn - 1
-!                   else
-!                     i_minus1 = nn + 1
-!                     i_plus1  = nn - 1
-!                   end if
-                   !-- Normal information - neighbour data for        --
-                   !-- Repulsive Boundary Particles (BPs)             --
-!                   iBP_Pointer_Info(nn,3) = i_minus1       !i-1 neighbour
-!                   iBP_Pointer_Info(nn,4) = i_plus1        !i+1 neighbour
-
-!                end if
-!             endif
-           
+        end if        
            
 	write(*,*)'End of gate at ',nn
 
@@ -3988,7 +4133,8 @@ c      ____________________ SUBROUTINE FloatingBodies_Particles
       write(*,*) ' Which type of Floating Object' 
       write(*,*) ' (1) Square '
       write(*,*) ' (2) Antifer'
-      write(*,*) ' (3) Tetrapod (In 2-D a Tripod)'
+      write(*,*) ' (3) Circle'
+      write(*,*) ' (4) Tetrapod (In 2-D a Tripod)'
       read(*,*) iopt_FloatingObject_temp
       write(*,*) iopt_FloatingObject_temp
 
@@ -3996,7 +4142,9 @@ c      ____________________ SUBROUTINE FloatingBodies_Particles
         call FloatingSquare_Particles(nn,N1,N,M,dx,dy,dz,beta)
       elseif(iopt_FloatingObject_temp.eq.2)then
         call Antifer_Particles(nn,N1,N,M,dx,dy,dz,beta)
-      elseif(iopt_FloatingObject_temp.eq.4)then
+      elseif(iopt_FloatingObject_temp.eq.3)then
+        call FloatingCircle_Particles(nn,N1,N,M,dx,dy,dz,beta)
+      elseif(iopt_FloatingObject_temp.eq.5)then
         print*
         print*,'ERROR: Invalid Option'
         print*,'You will need to write your own subroutine '
@@ -4379,6 +4527,223 @@ c         end if
       return
       end
 
+c      ____________________ SUBROUTINE FloatingCircle_Particles
+
+      subroutine FloatingCircle_Particles(nn,N1,N,M,dx,dy,dz,beta)
+      include 'common.gen2D'
+
+      double precision x1,z1,x2,z2
+
+
+      num_FB = num_FB + 1
+      if(num_FB.gt.num_FB_max)then
+        print*,'Number of floating Bodies exceeds max value'
+        print*,'num_FB.gt.num_FB_max'
+        print*,'Adjust num_FB_max in common.gen2D, num_FB_max = ',
+     &          num_FB_max
+        stop
+      endif
+      iopt_FloatingObject_type(num_FB) = 3
+c     -- Read in Floating Body parameters --
+      write(*,*) 'Enter radius of circle, degree interval'
+      read(*,*)  radiuscircle(num_FB), darc(num_FB)      != 0.1*2.0
+      write(*,*) radiuscircle(num_FB), darc(num_FB)
+      
+      XcylinderDimension(num_FB)=2*radiuscircle(num_FB)
+      ZcylinderDimension(num_FB)=2*radiuscircle(num_FB)
+
+      print*
+      write(*,*) 'Enter specific Weight'
+      read(*,*)  FB_specificWeight(num_FB)    != 1.0
+      write(*,*) FB_specificWeight(num_FB)
+      print*
+      write(*,*) 'Enter Center x,z of Circle'
+      read(*,*)  x_Center(num_FB), z_Center(num_FB)
+      write(*,*) x_Center(num_FB), z_Center(num_FB)
+      print*
+      write(*,*) 'Enter (x,z) shift of Centre of Gravity '
+      write(*,*) 'for use in Parallel Axis Theorem '
+      read(*,*)  xdiff_CofG, zdiff_CofG  !0.0*dz   !Shift Box Centre of Gravity to make slightly unbalanced
+      write(*,*) xdiff_CofG, zdiff_CofG
+      print*
+      write(*,*) 'Enter initial U,W velocity of Object'
+      read(*,*)  bigU(num_FB), bigW(num_FB)
+      write(*,*) bigU(num_FB), bigW(num_FB)
+      print*
+      write(*,*)
+     &     'Enter initial Body Angle (deg) and Rotation Rate (Omega)'
+      read(*,*)  body_Angle(num_FB), bigOmega(num_FB)       !Positive anticlockwise
+      write(*,*) body_Angle(num_FB), bigOmega(num_FB)
+      !- Converting from deg to radians -
+      if(body_Angle(num_FB).gt.180.0)then
+        body_Angle(num_FB) = body_Angle(num_FB) - 360.0
+      endif
+      body_Angle(num_FB) = body_Angle(num_FB)*pi/180.0
+
+      print*
+      write(*,*) 'Enter coefficient of Friction'
+      read(*,*)  friction_coeff(num_FB)
+      write(*,*) friction_coeff(num_FB)
+
+      print*
+
+       cylinderDensity(num_FB) = rho0* FB_specificWeight(num_FB)
+       bigMass(num_FB) = cylinderDensity(num_FB)*pi
+     &          *(radiuscircle(num_FB)*radiuscircle(num_FB))
+       bigInertiaYY(num_FB) = bigMass(num_FB)
+     &          *pi*(radiuscircle(num_FB)**4)/4               !area moment of inertia         
+       Box_XC(num_FB) = x_Center(num_FB) 
+       Box_ZC(num_FB) = z_Center(num_FB)
+       Box_XC(num_FB) = Box_XC(num_FB) + xdiff_CofG        !for now let xdiff_CofG and zdiff_CofG=0
+       Box_ZC(num_FB) = Box_ZC(num_FB) + zdiff_CofG
+       bigInertiaYY(num_FB) = bigInertiaYY(num_FB)
+     &                + bigMass(num_FB)
+     &                * (xdiff_CofG**2 + zdiff_CofG**2)  !Parallel Axis Theroem !!!TBD!!!
+       print*
+       print*,'-- Generating Floating Body --'
+       print*,'Floating Body Number : ',num_FB
+       print*,'Initial Conditions:'
+       print*,'RadiusCircle         ',radiuscircle(num_FB)
+       print*,'AngleInterval        ',darc(num_FB)
+       print*,'cylinderDensity      ',cylinderDensity(num_FB)
+       print*,'bigMass              ',bigMass(num_FB)
+       print*,'bigInertiaYY         ',bigInertiaYY(num_FB)
+       print*,'xdiff_CofG           ',xdiff_CofG
+       print*,'zdiff_CofG           ',zdiff_CofG
+       print*,'Box_XC, Box_ZC       ',Box_XC(num_FB), Box_ZC(num_FB)
+       print*,'bigU, bigW           ',bigU(num_FB), bigW(num_FB)
+       print*,'body_Angle, bigOmega ',
+     &         body_Angle(num_FB), bigOmega(num_FB)
+
+       nn_initial = nn
+
+       ! circle in this range (square around the box)
+       x_cyl_min(num_FB) = x_Center(num_FB) - radiuscircle(num_FB)
+       x_cyl_max(num_FB) = x_Center(num_FB) + radiuscircle(num_FB)
+       z_cyl_min(num_FB) = z_Center(num_FB) - radiuscircle(num_FB)
+       z_cyl_max(num_FB) = z_Center(num_FB) + radiuscircle(num_FB)
+       print*,'x_cir_min, x_cir_max    ',
+     &         x_cyl_min(num_FB), x_cyl_max(num_FB)
+       print*,'z_cir_min, z_cir_max    ',
+     &         z_cyl_min(num_FB), z_cyl_max(num_FB)
+
+       M_start  = 0
+       M_finish = 0 
+       !- Be careful here, sometimes nint does not give correct answer -
+       !- int should be used                                           -
+
+       !- No. of particles for each quadrant 
+
+        N_start=1
+!        N_finish=nint(90.0/darc(num_FB))             !***for each quadrant***!
+        N_total=nint(360.0/darc(num_FB))
+
+        print*,'num_FB',numFB
+        print*,'Total no. of particles = ',N_total
+
+        !convert darc from degree to radian
+        darc(num_FB)=darc(num_FB)*pi/180.0
+
+!       N_start  = nint( x_cyl_min(num_FB)/dx)+1
+!       N_finish = nint((x_cyl_min(num_FB)
+!     &                 + XcylinderDimension(num_FB))/dx)+1
+!       L_start  = nint( z_cyl_min(num_FB)/dz)+1
+!       L_finish = nint((z_cyl_min(num_FB)
+!     &                 + ZcylinderDimension(num_FB))/dz)+1
+
+!       print*,'N_start, N_finish       ',N_start, N_finish
+!       print*,'L_start, L_finish       ',L_start, L_finish
+
+       !2-D, therefore no y-component
+       y1 = 0.
+       v1 = 0.
+     
+!       x = (N_start - 1) * dx
+!       z = (L_start - 1) * dz
+
+!       if(z.lt.z_cyl_min(num_FB))then
+!         print*
+!         print*,'Adjusting z_min of object'
+!         z = z_cyl_min(num_FB)
+!         print*
+!       endif
+
+!       z = z - dz
+
+       x=x_Center(num_FB)
+       z=z_Center(num_FB) 
+
+!      print*,'Initial x,z ',x,z
+       !stop
+
+       !-- Side 1:  Full Circle
+       !print*,'Starts from extreme left where x=x_min'
+       ntemp = nn
+       do i = N_start,N_total
+         angle=(i-1)*darc(num_FB)
+         nn=nn+1
+!         x=x_Center(num_FB)
+!         z=z_Center(num_FB) 
+!         dx_Box = x - Box_XC(num_FB)
+!         dz_Box = z - Box_ZC(num_FB)
+!         xp_temp = dx_Box*cos(body_Angle(num_FB))
+!     &           - dz_Box*sin(body_Angle(num_FB))
+!         zp_temp = dx_Box*sin(body_Angle(num_FB))
+!     &           + dz_Box*cos(body_Angle(num_FB))
+         x1=x - radiuscircle(num_FB)*cos(angle)
+         z1=z + radiuscircle(num_FB)*sin(angle)
+         u1=bigU(num_FB) - bigOmega(num_FB)*(z1 - Box_ZC(num_FB))
+         w1=bigW(num_FB) + bigOmega(num_FB)*(x1 - Box_XC(num_FB))
+         call pos_veloc(nn,x1,y1,z1,u1,v1,w1)
+!        call pressure(nn,ZZmax,dx,dy,dz,expont,g)
+         rhop(nn)=cylinderDensity(num_FB)
+         pm(nn)=((radiuscircle(num_FB))**2)*darc(num_FB)*rhop(nn)/2
+         p(nn)=B*((rhop(nn)/rho0)**gamma-1.0)
+         if(iBC.eq.1)then
+           if(i.eq.N_start)then
+             i_minus1 = nn + N_total - 1                !to the last particle
+             i_plus1  = nn + 1
+           else if(i.eq.N_finish)then
+             i_minus1 = nn - 1 
+             i_plus1  = nn - N_total + 1                !to the first particle
+           else
+             i_minus1 = nn - 1
+             i_plus1  = nn + 1
+           end if
+           !-- Normal information - neighbour data for        --
+           !-- Repulsive Boundary Particles (BPs)             --
+           iBP_Pointer_Info(nn,3) = i_minus1       !i-1 neighbour     
+           iBP_Pointer_Info(nn,4) = i_plus1        !i+1 neighbour
+         end if
+       end do
+!       if(iBC.eq.1)then
+!         !-- Normal information - neighbour data for              --
+!         !-- first corner particle on cylinder side               --
+!         iBP_Pointer_Info(ntemp+1,3) = ntemp+1        !i-1 neighbour     
+!         iBP_Pointer_Info(ntemp+1,4) = ntemp+2        !i+1 neighbour
+!         !-- last corner particle on cylinder side                --
+!         iBP_Pointer_Info(nn,3) = nn -1         !i-1 neighbour     
+!         iBP_Pointer_Info(nn,4) = nn            !i+1 neighbour
+!         ntemp = nn
+!       end if
+       
+       nb_FB(num_FB) = nn
+       write(*,*) 'Object number: ',num_FB
+       write(*,*) 'no. of Object particles: nb_FB',nb_FB(num_FB)
+
+       write(88,*)num_FB
+       write(88,*)bigMass(num_FB)
+       write(88,*)bigInertiaYY(num_FB)
+       write(88,*)XcylinderDimension(num_FB),ZcylinderDimension(num_FB)
+       write(88,*)cylinderDensity(num_FB)
+       write(88,*)FB_SpecificWeight(num_FB)
+       write(88,*)friction_coeff(num_FB)
+       write(88,*)Box_XC(num_FB),Box_ZC(num_FB)
+       write(88,*)bigU(num_FB),bigW(num_FB),bigOmega(num_FB)
+       write(88,*)nb_FB(num_FB)
+
+      return
+      end
 c      ____________________ SUBROUTINE Antifer_Particles
 
       subroutine Antifer_Particles(nn,N1,N,M,dx,dy,dz,beta)
@@ -5161,6 +5526,7 @@ c     &   //' -fno-automatic'
       write(22,FMT1)TAB,'movingGate_2D.o \'
       write(22,FMT1)TAB,'movingPaddle_2D.o movingWedge_2D.o \'
       write(22,FMT1)TAB,'periodicityCorrection_2D.o \'
+      write(22,FMT1)TAB,'OutFlow_2D.o \'
 
       !- Kernel Corrections
       if (i_kernelcorrection.eq.0) then
@@ -5458,6 +5824,7 @@ c     &   //' -traceback'
       write(22,FMT1)TAB,'movingObjects_2D.o updateNormals_2D.o \'
       write(22,FMT1)TAB,'movingPaddle_2D.o movingWedge_2D.o \'
       write(22,FMT1)TAB,'periodicityCorrection_2D.o \'
+      write(22,FMT1)TAB,'OutFlow_2D.o \'
 
       !- Kernel Corrections
       if (i_kernelcorrection.eq.0) then
@@ -6624,3 +6991,4 @@ c
       
       return
       end
+
