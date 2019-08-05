@@ -35,6 +35,20 @@ c         --- Viscous Diffusion terms (Lo & Shao 2002) ---
       ax(i) = ax(i) + pm(j)*tempi*dux
       az(i) = az(i) + pm(j)*tempi*duz
 
+!       if (i.eq.246) then
+
+!        write(80,*) 'Contribution of VISCOUS effects '
+!        write(80,*) '   '
+!        write(80,*) 'particle number,i = ',i
+!        write(80,*) 'particle number,j = ',j
+!        write(80,*) 'viscous term in x dir = ', pm(j)*tempi*dux
+!        write(80,*) 'viscous term in z dir = ', pm(j)*tempi*duz
+!        write(80,*) 'ax(i) = ', ax(i)
+!        write(80,*) 'az(i) = ', az(i)
+!        write(80,*) '   '
+       
+!       end if 
+
       ax(j) = ax(j) - pm(i)*tempj*dux
       az(j) = az(j) - pm(i)*tempj*duz
 

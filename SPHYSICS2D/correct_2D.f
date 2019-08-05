@@ -25,10 +25,11 @@ c
 c  ...  account for body forces
 c
       do i=nbp1,np
+!      do i=nbp1,np-nbuffer
 
         udot(i) = udot(i) + grx*iflag(i)
-!        wdot(i) = wdot(i) + grz*iflag(i)    
-        wdot(i) = wdot(i)
+        wdot(i) = wdot(i) + grz*iflag(i)    
+!        wdot(i) = wdot(i)
 
       enddo
 
@@ -37,6 +38,7 @@ c  ...  account for XSPH
 c
 
       do i=nbp1,np
+!      do i=nbp1,np-nbuffer
 
        xdot(i) = up(i) + xcor(i)
        zdot(i) = wp(i) + zcor(i)

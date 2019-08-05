@@ -136,7 +136,7 @@ c234567891123456789212345679312345678941234567895123456789612345678971234567898
      2                         i_kernelcorrection                       
       common /time_step/ dt_1,dt_2,dt_new
       common /container/xmax_container,xmin_container,
-     1                  zmin_container,iflag(npar),
+     1                  zmin_container,iflag(npar),iout(npar),
      2                  xtrash,ytrash,ztrash,nct_ini,zmax_ini,
      4                  ncz_ini,zcontrol
       common /geometry/ i_geometry,vlx1,vlx2,vlx,vlz  

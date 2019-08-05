@@ -118,7 +118,7 @@ c                            ! cells
 
 c          -- Cells in the same XY sheet -
            lx2 = lx+1
-           if(lx2.le.ncx)then
+           if(lx2.le.ncx)then     
              call celij(j1,j1+1,kind_p1,ini_kind_p2,lx2)     !East
            endif      
       
@@ -131,7 +131,7 @@ c          -- Cells in the same XY sheet -
              lx2=lx+1
              if(lx2.gt.2) call celij(j1,j1+ncx-1,
      &                                 kind_p1,ini_kind_p2,lx2)   !North-West
-       
+
              lx2=lx+1
              if(lx2.le.ncx) call celij(j1,j1+ncx+1,
      &                                 kind_p1,ini_kind_p2,lx2)   !North-East                 
@@ -143,7 +143,7 @@ c          -- Cells in the same XY sheet -
        enddo
        
        do j1=1,nct
-           if(nc(j1,kind_p1).gt.0)
+           if(nc(j1,kind_p1).gt.0) 
      +		call self(j1,kind_p1,ini_kind_p2)
        enddo
              
@@ -177,6 +177,7 @@ c      -- Periodic Boundary Calls in X-Direction --
              
        
        do i=nstart,np
+!       do i=nstart,np-nbuffer
          
          udot(i) = ax(i)
          wdot(i) = az(i)
@@ -186,7 +187,7 @@ c      -- Periodic Boundary Calls in X-Direction --
          zcor(i) = eps*wx(i)
        
          TEdot(i)=aTE(i)
-       
+      
        enddo
 
              

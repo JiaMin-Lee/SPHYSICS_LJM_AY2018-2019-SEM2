@@ -64,14 +64,19 @@ c        Projection of plane-projected vector r(BP->WP projection) onto tangent 
          else
            deltappt = deltaptb(jjp,1)     !SPHysics Guide, delta_b in Eq. 2.15
          end if
-      
+
+         one_over_2p=1.0/(2.0*0.00025)
 
          if(pdot3.gt.0.0)then ! particle inside
+!             q=pdot3 * one_over_2p
              q=pdot3 * one_over_2h           !normalized distance from wall
          else if(pdot3.lt.0.0)then !Particle ouside 
              q=0.2*abs(pdot3) * one_over_2h  !normalized distance from wall
-         else !Particle on the boundary
+!             q=0.2*abs(pdot3) * one_over_2p  !normalized distance from wall
+ 
+        else !Particle on the boundary
              q=h*(1.0e-3) * one_over_2h      !correcting for zero distance from wall
+!             q=h*(1.0e-3) * one_over_2p      !correcting for zero distance from wall
          end if
 
          if(q.lt.1.0.and.pdot3.gt.0.0.and.
@@ -118,8 +123,9 @@ c          --- Velocity Correction ---     !SPHysics Guide, Eq. 2.18
                 epsilon_dyn = 1.0
              endif
 
-             Appc = App*(epsilon_Z + epsilon_dyn) !Force correction     !SPHysics Guide, Eq. 2.16
-             
+!             Appc = App*(epsilon_Z + epsilon_dyn) !Force correction     !SPHysics Guide, Eq. 2.16
+             Appc = App                            !Force correction     !SPHysics Guide, Eq. 2.16
+            
              facp=0.5*(1.+cos(pi*abs(xpp)/deltappt))*
      1            (Appc*(1.0-q)/sqrt(q))       !SPHysics Guide, Eq. 2.12, 2.13, 2.15
 c     2            *vnorm_mass
@@ -131,7 +137,56 @@ c     2            *vnorm_mass
              fxbp = 0.0
              fzbp = 0.0
          end if
-
         
+             i_open = 0
+             
+!       if (iip.eq.115.or.iip.eq.50) then
+!          write(80,*) '    '
+!          write(80,*) 'Boundary repulsion force contribution'
+!          write(80,*) '  '
+!          write(80,*) 'particle number, i = ', iip
+!          write(80,*) 'particle number, j = ', jjp
+!          write(80,*) 'A = ' , App
+!          write(80,*) 'q = ', q
+!          write(80,*) 'R = ', App*(1.0-q)/sqrt(q)
+!          write(80,*) 'P = ',(0.5*(1.+cos(pi*abs(xpp)/deltappt)))
+!          write(80,*) 'normal vector to boundary in x-dir = ', xnb(jjp)         
+!          write(80,*) 'normal vector to boundary in z-dir = ', znb(jjp)
+!          write(80,*) 'Repulsion force per unit mass in x-dir = ', fxbp
+!          write(80,*) 'Repulsion force per unit mass in z-dir = ', fzbp
+!          write(80,*) '    '
+
+!         write(*,*) '    '
+!         write(*,*) 'Boundary repulsion force contribution'
+!         write(*,*) '  '
+!         write(*,*) 'particle number, i = ', iip
+!         write(*,*) 'particle number, j = ', jjp
+!         write(*,*) 'A = ' , App
+!         write(*,*) 'q = ', q
+!         write(*,*) 'R = ', App*(1.0-q)/sqrt(q)
+!         write(*,*) 'P = ',(0.5*(1.+cos(pi*abs(xpp)/deltappt)))
+!         write(*,*) 'normal vector to boundary in x-dir = ', xnb(jjp)         
+!         write(*,*) 'normal vector to boundary in z-dir = ', znb(jjp)
+!         write(*,*) 'Repulsion force per unit mass in x-dir = ', fxbp
+!         write(*,*) 'Repulsion force per unit mass in z-dir = ', fzbp
+!         write(*,*) '    '
+!       end if
+
+        !   tfx(iip) = tfx(iip) + fxbp
+        !   tfz(iip) = tfz(iip) + fzbp
+
+!          if (i_open.eq.1) then
+!           open(71,file='RepulsionForce')
+!           write(71,1001) iip, jjp, cs(iip), App, q, R, P, fxbp,fzbp
+!           close(71)
+!          else
+!          open(71,file='RepulsionForce',status='old',POSITION='append')
+!          write(71,1001) iip, jjp, cs(iip), App, q, R, P, fxbp,fzbp
+!          close(71)
+!         end if 
+                
+!1001   format(2(1x, I6), 7e16.8)
+                               
+!        end if 
 
       end	

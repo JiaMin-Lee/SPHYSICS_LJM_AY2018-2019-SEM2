@@ -155,6 +155,33 @@ c              ...  Vorticity calculation
              endif  
 
              else if(i.gt.nb.and.j.le.nb)then			!j is boundary particle
+
+              ax(i) = ax(i) - pm(j) * p_v * frxi
+              az(i) = az(i) - pm(j) * p_v * frzi
+
+              call gradients_calc(i,j,dux,duz)
+
+              call viscosity(dot,drx,drz,dux,duz,rr2,
+     +              cbar,robar,one_over_rhobar,i,j,j1,j1,term2i,term2j)
+
+c  ...  density acceleration (1992; 3.9)
+c
+
+              dot2i = dux*frxi + duz*frzi
+              dot2j = dux*frxj + duz*frzj
+              ar(i) = ar(i) + pm(j)*dot2i
+
+c   ...         Thermal Energy
+c             (Monaghan, JCP 110 (1994) 399- 406)
+
+
+              term1i=0.5 * p_v *( frxi*dux+frzi*duz)
+              term1j=0.5 * p_v *( frxj*dux+frzj*duz)
+
+              aTE(i)=aTE(i)+pm(j) * (term1i+term2i)
+
+!             Repulsion force
+
                call MonaghanBC(i,j,drx,drz,dot,dux,duz,
      &                             fxbMON,fzbMON)   
                ax(i) = ax(i) + fxbMON
@@ -180,6 +207,34 @@ c              ...  Vorticity calculation
                end if
 
              else if(j.gt.nb.and.i.le.nb)then			!i is boundary particle
+
+              ax(j) = ax(j) + pm(i) * p_v * frxj
+              az(j) = az(j) + pm(i) * p_v * frzj
+
+
+              call gradients_calc(i,j,dux,duz)
+
+              call viscosity(dot,drx,drz,dux,duz,rr2,
+     +              cbar,robar,one_over_rhobar,i,j,j1,j1,term2i,term2j)
+
+c  ...  density acceleration (1992; 3.9)
+c
+
+              dot2i = dux*frxi + duz*frzi
+              dot2j = dux*frxj + duz*frzj
+              ar(j) = ar(j) + pm(i)*dot2j
+
+c   ...         Thermal Energy
+c             (Monaghan, JCP 110 (1994) 399- 406)
+
+
+              term1i=0.5 * p_v *( frxi*dux+frzi*duz)
+              term1j=0.5 * p_v *( frxj*dux+frzj*duz)
+
+              aTE(j)=aTE(j)+pm(i) * (term1j+term2j)
+
+!             Repulsion force
+
                call MonaghanBC(j,i,-drx,-drz,dot,-dux,-duz,
      &                             fxbMON,fzbMON)   
                ax(j) = ax(j) + fxbMON

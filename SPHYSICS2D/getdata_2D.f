@@ -38,6 +38,7 @@ c
       read(11,*)i_periodicOBs(2)
       read(11,*)i_periodicOBs(3)
       read(11,*)lattice
+      read(11,*)g
       read(11,*)i_EoS
       read(11,*)h_SWL 
       read(11,*)B
@@ -77,6 +78,7 @@ c
       read(11,*)ndt_VerletPerform
       read(11,*)ndt_FilterPerform
       read(11,*)ndt_DBCPerform
+      read(11,*)nbuffer
  
           
        write(80,*) ' '
@@ -86,6 +88,7 @@ c
        write(80,*)'Y-Direction: ',i_periodicOBs(2)
        write(80,*)'Z-Direction: ',i_periodicOBs(3)
        write(80,*) ' '
+       write(80,*)'g = ',g
        !- Screen printout -
        print*
        print*,'Periodicity '
@@ -94,7 +97,7 @@ c
        print*,'Y-Direction: ',i_periodicOBs(2)
        print*,'Z-Direction: ',i_periodicOBs(3)
        print*
-       
+       print*,'g=',g
 
 
        if (np .ge. npar ) then
@@ -292,6 +295,7 @@ c     --- Load Particle Position Data ---
          endif
        
          iflag(i)=1 ! To detect particles inside the container
+         iout(i)=1  ! To detect mass flow rate
 
          pVol(i)      = pm(i)/rhop(i)
          

@@ -87,11 +87,15 @@ c
        open(19,file='DT')       
        open(50,file='ENERGY')
        open(54,file='MovingBodyHistory.out')
-
-       
+       open(25,file='OutofLimit')
+       open(26,file='OutFlow')
+ 
        pi=4.*atan(1.)
-       g=9.81
-       
+!!       g=9.81 
+!!       g=0.
+        
+!      close(25)
+        
 c
 c  ...  initialization
 c      
@@ -120,9 +124,12 @@ c
        grab_E=0
        grx=0.0
        gry=0.0
+       
        grz=-g
-!       grz=0.0
-
+        
+       write(*,*) 'g=',g
+       write(*,*) 'grz= ',grz
+       write(80,*) 'grz= ',grz
                            
        do while (time.lt.tmax)
           visc_dt=0.
@@ -165,7 +172,7 @@ c
            close(44)
            
            grab_P=0.
-       
+                    
          else
 
            grab_P=grab_P+dt       
@@ -218,6 +225,8 @@ c       close(19)
        close(50)       
        close(53) 
        close(54)
+       close(25)                !close OutofLimit
+       close(26)                !close Outflow       
 
 	   
        write(80,*) 'End '

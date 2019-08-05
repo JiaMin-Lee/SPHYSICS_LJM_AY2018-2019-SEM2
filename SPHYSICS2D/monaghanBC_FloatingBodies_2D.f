@@ -72,6 +72,8 @@ c
 c
 c      
 c
+         one_over_2p=1./(2*0.00025)
+                
          Prx = abs(xpp)/deltappt    
          
          facp = 0.0
@@ -85,10 +87,13 @@ c
          !normalized distance from wall
          if(pdot3.gt.0.0)then ! particle inside
              q=pdot3 * one_over_2h           !normalized distance from wall
+!             q=pdot3 * one_over_2p           !normalized distance from wall
          else if(pdot3.lt.0.0)then !Particle ouside 
              q=0.2*abs(pdot3) * one_over_2h  !normalized distance from wall
+!             q=0.2*abs(pdot3) * one_over_2p  !normalized distance from wall
          else !Particle on the boundary
              q=h*(1.0e-3) * one_over_2h      !correcting for zero distance from wall
+!             q=h*(1.0e-3) * one_over_2p      !correcting for zero distance from wall
          end if
 
 c         if(q.lt.1.0.and.pdot3.gt.0.0.and.
@@ -145,6 +150,7 @@ c
 
                  if(q.lt.0.2)then !Boundary Particle has crossed boundary 
                    q = h*(1.0e-3) * one_over_2h 
+!                   q = h*(1.0e-3) * one_over_2p 
                  endif
                  q = q*q
                end if
@@ -181,7 +187,8 @@ c          --- Velocity Correction ---
                 epsilon_dyn = 1.0
              endif
 
-             Appc = App*(epsilon_Z + epsilon_dyn) !Force correction
+             Appc=App
+!             Appc = App*(epsilon_Z + epsilon_dyn) !Force correction
              Q_fn = (1.0-q)/sqrt(q)
              
              facp=0.5*(1.+cos(pi*abs(xpp)/deltappt))*
@@ -193,27 +200,27 @@ c          --- Velocity Correction ---
              fzbp = znb(jjp)*facp   
 
 
-             if(iip.lt.nbp1)then
-               fmax = Appc*Q_fn*vnorm_mass
-               chi_X = (1.0 - Prx)
-
-               q_r = q
-               xtb_r = xtb(jjp)
-               ztb_r = ztb(jjp)
-
-               abs_t_dot_t = abs(xtb(iip)*xtb_r 
+              if(iip.lt.nbp1)then
+                fmax = Appc*Q_fn*vnorm_mass
+                chi_X = (1.0 - Prx)
+ 
+                q_r = q
+                xtb_r = xtb(jjp)
+                ztb_r = ztb(jjp)
+ 
+                abs_t_dot_t = abs(xtb(iip)*xtb_r 
      &                         + ztb(iip)*ztb_r)
 c
 c
                !-- Friction force between rigid objects --
 
-               id_num_FB_i = i_FB_Pointer_Info(iip)
-               pmu = friction_coeff(id_num_FB_i)
-               if(abs_t_dot_t.lt.0.6)then  !Activates forces only between sliding faces
-                 pmu = 0.0
-                 fxbp = 0.0
-                 fzbp = 0.0
-
+                id_num_FB_i = i_FB_Pointer_Info(iip)
+                pmu = friction_coeff(id_num_FB_i)
+                if(abs_t_dot_t.lt.0.6)then  !Activates forces only between sliding faces
+                  pmu = 0.0
+                  fxbp = 0.0
+                  fzbp = 0.0
+ 
                  facp_F = 0.0
                else
                  facp_F = fmax
@@ -221,7 +228,7 @@ c
                !if(jjp.gt.nbfm)pmu = 0.0  !No friction between moving blocks   !<--------------------
                !u_parallel = duxp*xtb(jjp) + duzp*ztb(jjp)
                u_parallel = duxp*xtb_r + duzp*ztb_r
-
+ 
                if(u_parallel.gt.0.0)then
                  sign_u_parallel = 1.0
                elseif(u_parallel.lt.0.0)then
@@ -233,10 +240,10 @@ c
                
                F_Static_i = (X_nonFriction(id_num_FB_i)*xtb_r
      &                     + Z_nonFriction(id_num_FB_i)*ztb_r)
-
-
+ 
+ 
                F_Static_i_abs = abs(F_Static_i)
-
+ 
                if(F_Static_i.gt.0.0)then
                  sign_F_Static_i = 1.0
                elseif(F_Static_i.lt.0.0)then
@@ -259,7 +266,7 @@ c
      &             *min(F_Dynamic,F_Static_i_abs)  !ensures max friction force is <= F_Dynamic
                    F_fb_x_i =   f_temp*xtb_r
                    F_fb_z_i =   f_temp*ztb_r
-
+ 
                  elseif(u_parallel_ratio.lt.2.0)then
                    !- Static-to-Dynamic Friction Force F_SD -
                    F_SD = F_Static_i_abs + (F_Dynamic - F_Static_i_abs)
@@ -268,13 +275,13 @@ c
      &             *min(F_Dynamic,F_SD)  !ensures max friction force is <= F_Dynamic
                    F_fb_x_i =   f_temp*xtb_r
                    F_fb_z_i =   f_temp*ztb_r
-
+ 
                  else
                    !- Dynamic Friction Force -
                    f_temp = - sign_u_parallel*chi_X*F_Dynamic
                    F_fb_x_i =   f_temp*xtb_r
                    F_fb_z_i =   f_temp*ztb_r
-
+ 
                  endif
                  X_Friction(id_num_FB_i) = X_Friction(id_num_FB_i)
      &                                        + F_fb_x_i
@@ -284,7 +291,7 @@ c    &                                        + F_fb_y_i
      &                                        + F_fb_z_i
                  fxbp = fxbp + F_fb_x_i/pm(iip)  !per unit mass force
                  fzbp = fzbp + F_fb_z_i/pm(iip)  !per unit mass force
-
+ 
                  if(chi_X.gt.0.5.and.abs_t_dot_t.gt.0.6)then
                    nb_inFriction(id_num_FB_i) = 
      &             nb_inFriction(id_num_FB_i) + 1
@@ -305,34 +312,34 @@ c                     endif
                    id_num_FB_j = i_FB_Pointer_Info(jjp)
                    F_Static_j = (X_nonFriction(id_num_FB_j)*xtb_r
      &                         + Z_nonFriction(id_num_FB_j)*ztb_r)
-
+ 
                    F_Static_j_abs = abs(F_Static_j)
                    F_fb_x_j = F_fb_x_i
                    F_fb_z_j = F_fb_z_i
-
+ 
                    X_Friction(id_num_FB_j) = X_Friction(id_num_FB_j)
      &                                          - F_fb_x_j
 c                  Y_Friction(id_num_FB_j) = Y_Friction(id_num_FB_j)
 c    &                                          - F_fb_y_j
-                   Z_Friction(id_num_FB_j) = Z_Friction(id_num_FB_j)
+                  Z_Friction(id_num_FB_j) = Z_Friction(id_num_FB_j)
      &                                          - F_fb_z_j
-                   if(chi_X.gt.0.5.and.abs_t_dot_t.gt.0.6)then
-                     nb_inFriction(id_num_FB_j) = 
+                  if(chi_X.gt.0.5.and.abs_t_dot_t.gt.0.6)then
+                    nb_inFriction(id_num_FB_j) = 
      &               nb_inFriction(id_num_FB_j) + 1
 c                     if(jjp.eq.1135)then
 c                       print*,'i,J,xp,zp, num_FB, nb_inFriction#',
 c     &                 iip,jjp,xp(iip),zp(iip),xp(jjp),zp(jjp),
 c     &                 id_num_FB_j,nb_inFriction(id_num_FB_j)
 c                     endif
-                   endif
-                 endif   !End of:    if(jjp.gt.nbfm.and.iip.lt.nbp1)then
-               endif   !if(iip.gt.nbfm)then
-             endif   !End of:    if(1.eq.2.and.iip.lt.nbp1)then
-         else
-             fxbp = 0.0
-             fzbp = 0.0
+                  endif
+                endif   !End of:    if(jjp.gt.nbfm.and.iip.lt.nbp1)then
+              endif   !if(iip.gt.nbfm)then
+            endif   !End of:    if(1.eq.2.and.iip.lt.nbp1)then
+        else
+            fxbp = 0.0
+            fzbp = 0.0
 
-         end if
+       end if
 
 c      if(1.eq.2.and.
 c     &  itime.ge.0.and.   !itime.ge.11100.and.    !itime.ge.0.and.   ! 

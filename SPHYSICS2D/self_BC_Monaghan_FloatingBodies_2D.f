@@ -168,6 +168,33 @@ c             ...  Vorticity calculation
 
             else if(i.gt.nb.and.j.le.nb)then              !j is boundary particle
 
+!              ax(i) = ax(i) - pm(j) * p_v * frxi
+!              az(i) = az(i) - pm(j) * p_v * frzi
+!
+!              call gradients_calc(i,j,dux,duz)
+!
+!              call viscosity(dot,drx,drz,dux,duz,rr2,
+!     +              cbar,robar,one_over_rhobar,i,j,j1,j1,term2i,term2j)
+!
+!c  ...  density acceleration (1992; 3.9)
+!c
+!
+!              dot2i = dux*frxi + duz*frzi
+!              dot2j = dux*frxj + duz*frzj
+!              ar(i) = ar(i) + pm(j)*dot2i
+!
+!c   ...         Thermal Energy
+!c             (Monaghan, JCP 110 (1994) 399- 406)
+!
+!
+!              term1i=0.5 * p_v *( frxi*dux+frzi*duz)
+!              term1j=0.5 * p_v *( frxj*dux+frzj*duz)
+!
+!              aTE(i)=aTE(i)+pm(j) * (term1i+term2i)
+
+!             Repulsion force
+
+
               call MonaghanBC(i,j,drx,drz,dot,dux,duz,
      &                        fxbMON,fzbMON)    
               ax(i) = ax(i) + fxbMON
@@ -184,6 +211,11 @@ c             ...  Vorticity calculation
                 ax(j) = ax(j) - fxbMON*pm(i)
                 az(j) = az(j) - fzbMON*pm(i)
 
+                !write(80,*)' '
+                !write(80,*)'i is WP'
+                !write(80,*)'Floating particle,j = ', j
+                !write(80,*)'fxbMON = ',fxbMON,' fzbMON = ',fzbMON 
+
                 !- Viscous wall force -
                 temp = pVol(j)*visc_wall*
      &            ((drx*frxj+drz*frzj)/(rr2 + eta2))
@@ -193,6 +225,34 @@ c             ...  Vorticity calculation
               end if
             
             else if(j.gt.nb.and.i.le.nb)then                  !i is boundary particle
+
+!             ax(j) = ax(j) + pm(i) * p_v * frxj
+!             az(j) = az(j) + pm(i) * p_v * frzj
+!
+!
+!             call gradients_calc(i,j,dux,duz)
+!
+!             call viscosity(dot,drx,drz,dux,duz,rr2,
+!    +              cbar,robar,one_over_rhobar,i,j,j1,j1,term2i,term2j)
+!
+c!  ...  density acceleration (1992; 3.9)
+c!
+!
+!             dot2i = dux*frxi + duz*frzi
+!             dot2j = dux*frxj + duz*frzj
+!             ar(j) = ar(j) + pm(i)*dot2j
+!
+c!   ...         Thermal Energy
+c!             (Monaghan, JCP 110 (1994) 399- 406)
+!
+!
+!             term1i=0.5 * p_v *( frxi*dux+frzi*duz)
+!             term1j=0.5 * p_v *( frxj*dux+frzj*duz)
+!
+!              aTE(j)=aTE(j)+pm(i) * (term1j+term2j)
+
+!             Repulsion force
+
 
               call MonaghanBC(j,i,-drx,-drz,dot,-dux,-duz,
      &                        fxbMON,fzbMON)   
@@ -209,6 +269,11 @@ c             ...  Vorticity calculation
               if(i.gt.nbfm)then  !Opposite Forces on free-moving object (Not per unit mass, see subroutine whole_body_motion)
                 ax(i) = ax(i) - fxbMON*pm(j)
                 az(i) = az(i) - fzbMON*pm(j)
+
+               ! write(80,*)' '
+               ! write(80,*)'j is WP'
+               ! write(80,*)'Floating particle,i = ', i
+               ! write(80,*)'fxbMON = ',fxbMON,' fzbMON = ',fzbMON
 
                 !- Viscous wall force -
                 temp = pVol(i)*visc_wall*
@@ -243,6 +308,7 @@ c     &                     j.gt.nb_FB(i_num_FB)      ) )then
                           ax(j) = ax(j) - fxbMON*pm(j)
                           az(j) = az(j) - fzbMON*pm(j)
 
+
                           i_BP_BP_interaction = 1
                         endif
                       else
@@ -256,12 +322,23 @@ c     &                     j.gt.nb_FB(i_num_FB)      ) )then
                   ax(i) = ax(i) + fxbMON*pm(j)
                   az(i) = az(i) + fzbMON*pm(j)
 
+                 ! write(80,*)' '
+                 ! write(80,*)'j is BP'
+                 ! write(80,*)'Floating particle,i = ', i
+                 ! write(80,*)'fxbMON = ',fxbMON,' fzbMON = ',fzbMON
+
+
                 end if    !End of:  if(j.gt.nbfm)then
               else if(j.gt.nbfm)then   !j is free-moving BP, i is prescibed BP
                 call MonaghanBC(j,i,-drx,-drz,dot,-dux,-duz,
      &                          fxbMON,fzbMON)
                 ax(j) = ax(j) + fxbMON*pm(i)
                 az(j) = az(j) + fzbMON*pm(i)
+
+               ! write(80,*)' '
+               ! write(80,*)'i is BP'
+               ! write(80,*)'Floating particle,j = ', j
+               ! write(80,*)'fxbMON = ',fxbMON,' fzbMON = ',fzbMON
 
               endif   !End of:  if(i.gt.nbfm)then
             endif ! Interaction fluid-fluid or fluid-boundary
